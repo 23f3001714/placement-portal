@@ -154,140 +154,182 @@
 </script>
 
 <template>
-    <div class="container py-4">
-        <div class="text-center">
-            <h1>Application Details</h1>
-        </div>
-
-        <button @click="router.push({name: 'company-dashboard'})" class="btn btn-secondary mb-3">Back to Dashboard</button>
-
-        <div v-if="error" class="alert alert-danger">
-            {{ error }}
-            <button class="btn btn-danger" @click="logout">Try login again</button>
-        </div>
-
-        <div v-if="successMsg" class="alert alert-success">
-            {{ successMsg }}
-        </div>
-
-        <div v-if="application">
-            <p><strong>Status:</strong> {{ application.status }}</p>
-
-            <h3 class="mt-3">Student Information</h3>
-            <div class="row mt-3">
-                <div class="col">
-                    <p><strong>Name:</strong> {{ application.student_name }}</p>
-                    <p><strong>Email:</strong> {{ application.student_email }}</p>
-                    <p><strong>CGPA:</strong> {{ application.cgpa }}</p>
-                </div>
-                <div class="col">
-                    <p><strong>Branch:</strong> {{ application.branch }}</p>
-                    <p><strong>Skills:</strong> {{ application.skills || 'N/A' }}</p>
-                    <button @click="downloadResume(application.student_id)" class="btn btn-primary">Download Resume</button>
-                </div>
-            </div>
-
-            <h3 class="mt-5">Application Information</h3>
-            <div class="row mt-3">
-                <div class="col">
-                    <p><strong>Job:</strong> {{ application.job_title }}</p>
-                    <p><strong>Applied On:</strong> {{ formatDate(application.applied_at) }}</p>
-                </div>
-                <div class="col">
-                    <p v-if="application.interview_date"><strong>Interview Date:</strong> {{ formatDateTime(application.interview_date) }}</p>
-                    <p v-if="application.interview_location"><strong>Interview Location:</strong> {{ application.interview_location }}</p>
-                    <p v-if="application.feedback"><strong>Feedback:</strong> {{ application.feedback }}</p>
-                </div>
-            </div>
-
-            <div v-if="application.salary">
-                <h3 class="mt-5">Offer Details</h3>
-                <div class="row mt-3">
-                    <div class="col">
-                        <p><strong>Salary:</strong> Rs. {{ application.salary?.toLocaleString() }}</p>
-                    </div>
-                    <div class="col">
-                        <p><strong>Joining Date:</strong> {{ formatDate(application.joining_date) }}</p>
-                    </div>
-                </div>
-                <button v-if="application.offer_letter_path" @click="downloadOfferLetter" class="btn btn-primary">Download Offer Letter</button>
-            </div>
-
-            <div v-if="!isFinalState">
-                <h3 class="mt-5">Actions</h3>
-
-                <div v-if="canShortlist" class="mt-3">
-                    <button @click="shortlist" class="btn btn-success">Shortlist</button>
-                    <button @click="action = 'reject'" class="btn btn-danger">Reject</button>
-                </div>
-
-                <div v-if="canScheduleInterview" class="mt-3">
-                    <div v-if="action !== 'interview'">
-                        <button @click="action = 'interview'" class="btn btn-primary">Schedule Interview</button>
-                        <button @click="action = 'reject'" class="btn btn-danger">Reject</button>
-                    </div>
-                    <div v-else class="mt-3">
-                        <h4>Schedule Interview</h4>
-                        <div class="row">
-                            <div class="col mb-2">
-                                <label>Date & Time</label>
-                                <input v-model="interviewForm.interview_date" type="datetime-local" class="form-control" required>
-                            </div>
-                            <div class="col mb-2">
-                                <label>Location</label>
-                                <input v-model="interviewForm.interview_location" type="text" class="form-control" placeholder="Location/link for interview.." required>
-                            </div>
-                        </div>
-                        <button @click="scheduleInterview" class="btn btn-success">Confirm</button>
-                        <button @click="action = null" class="btn btn-secondary">Cancel</button>
-                    </div>
-                </div>
-
-                <div v-if="canReleaseOffer" class="mt-3">
-                    <div v-if="action !== 'offer'">
-                        <button @click="action = 'offer'" class="btn btn-success">Release Offer</button>
-                        <button @click="action = 'reject'" class="btn btn-danger">Reject</button>
-                    </div>
-                    <div v-else class="mt-3">
-                        <h4>Release Offer</h4>
-                        <div class="row">
-                            <div class="col mb-2">
-                                <label>Annual Salary INR</label>
-                                <input v-model.number="offerForm.salary" type="number" min="1" class="form-control" required>
-                            </div>
-                            <div class="col mb-2">
-                                <label>Joining Date</label>
-                                <input v-model="offerForm.joining_date" type="date" class="form-control" required>
-                            </div>
-                        </div>
-                        <button @click="releaseOffer" class="btn btn-success">Confirm Release</button>
-                        <button @click="action = null" class="btn btn-secondary">Cancel</button>
-                    </div>
-                </div>
-
-                <div v-if="application.status === APPLICATION_STATUS.OFFER_RELEASED" class="mt-3">
-                    <p>Waiting for student to accept/reject the offer.</p>
-                </div>
-
-                <div v-if="application.status === APPLICATION_STATUS.OFFER_ACCEPTED" class="mt-3">
-                    <p><strong>Student accepted the offer.</strong> Placement is created.</p>
-                    <button @click="downloadPlacementLetter" class="btn btn-primary">Download Placement Letter</button>
-                </div>
-
-                <div v-if="action === 'reject' && canReject" class="mt-3">
-                    <h4>Reject Application</h4>
-                    <div class="mb-2">
-                        <label>Feedback</label>
-                        <textarea v-model="rejectFeedback" class="form-control" rows="2" placeholder="Reason for rejection.."></textarea>
-                    </div>
-                    <button @click="reject" class="btn btn-danger">Confirm Reject</button>
-                    <button @click="action=null; rejectFeedback = ''" class="btn btn-secondary">Cancel</button>
-                </div>
-            </div>
-
-            <div v-else class="mt-5">
-                <p><strong>This application is in a final state.</strong> No further actions can be taken.</p>
-            </div>
-        </div>
+  <div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+      <div>
+        <h1 class="gradient-text fw-bold mb-0">Application Details</h1>
+        <p class="text-muted mb-0" v-if="application">Candidate Application Profile</p>
+      </div>
+      <div class="mt-3 mt-md-0 d-flex gap-2">
+        <button @click="router.push({name: 'company-dashboard'})" class="btn btn-secondary">Back to Dashboard</button>
+        <button class="btn btn-danger" @click="logout">Logout</button>
+      </div>
     </div>
+
+    <div v-if="error" class="alert alert-danger d-flex justify-content-between align-items-center mb-4">
+      <span>{{ error }}</span>
+      <button class="btn btn-danger btn-sm" @click="logout">Try login again</button>
+    </div>
+
+    <div v-if="successMsg" class="alert alert-success mb-4">
+      {{ successMsg }}
+    </div>
+
+    <div v-if="application" class="glass-card" style="max-width: 850px; margin: 0 auto;">
+      
+      <!-- Top header / status info -->
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+        <h3 class="mb-0 text-white">Application Status</h3>
+        <span :class="{
+          'badge-custom badge-applied': application.status === 'applied',
+          'badge-custom badge-shortlisted': application.status === 'shortlisted',
+          'badge-custom badge-interview': application.status === 'interview_scheduled',
+          'badge-custom badge-success': application.status === 'offer_released' || application.status === 'offer_accepted',
+          'badge-custom badge-danger': application.status === 'rejected' || application.status === 'offer_rejected'
+        }">
+          {{ application.status }}
+        </span>
+      </div>
+
+      <!-- Student Details -->
+      <div class="glass-panel mb-4">
+        <h4 class="mb-3 text-info">Student Profile</h4>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <p class="mb-2"><strong>Name:</strong> <span class="text-light">{{ application.student_name }}</span></p>
+            <p class="mb-2"><strong>Email:</strong> <span class="text-light">{{ application.student_email }}</span></p>
+            <p class="mb-2"><strong>CGPA:</strong> <span class="text-light">{{ application.cgpa }}</span></p>
+          </div>
+          <div class="col-md-6 mb-2">
+            <p class="mb-2"><strong>Branch:</strong> <span class="text-light">{{ application.branch }}</span></p>
+            <p class="mb-2"><strong>Skills:</strong> <span class="text-light">{{ application.skills || 'N/A' }}</span></p>
+            <p class="mb-0 mt-3 d-flex align-items-center">
+              <button @click="downloadResume(application.student_id)" class="btn btn-primary btn-sm py-1 px-3">Download Resume</button>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application Info -->
+      <div class="glass-panel mb-4">
+        <h4 class="mb-3 text-info">Application Info</h4>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <p class="mb-2"><strong>Job Title:</strong> <span class="text-light">{{ application.job_title }}</span></p>
+            <p class="mb-2"><strong>Applied On:</strong> <span class="text-light">{{ formatDate(application.applied_at) }}</span></p>
+          </div>
+          <div class="col-md-6 mb-2">
+            <p class="mb-2" v-if="application.interview_date"><strong>Interview Schedule:</strong> <span class="text-light text-warning">{{ formatDateTime(application.interview_date) }}</span></p>
+            <p class="mb-2" v-if="application.interview_location"><strong>Interview Venue:</strong> <span class="text-light">{{ application.interview_location }}</span></p>
+            <p class="mb-2" v-if="application.feedback"><strong>Feedback Notes:</strong> <span class="text-light">{{ application.feedback }}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offer Details -->
+      <div v-if="application.salary" class="glass-panel mb-4 border border-success">
+        <h4 class="mb-3 text-success">Offer Information</h4>
+        <div class="row mb-3">
+          <div class="col-md-6 mb-2">
+            <p class="mb-0"><strong>Offered Package:</strong> <span class="text-light">Rs. {{ application.salary?.toLocaleString() }}</span></p>
+          </div>
+          <div class="col-md-6 mb-2">
+            <p class="mb-0"><strong>Joining Date:</strong> <span class="text-light">{{ formatDate(application.joining_date) }}</span></p>
+          </div>
+        </div>
+        <button v-if="application.offer_letter_path" @click="downloadOfferLetter" class="btn btn-primary btn-sm">Download Offer Letter</button>
+      </div>
+
+      <!-- Actions -->
+      <div v-if="!isFinalState" class="mt-4 pt-3 border-top border-secondary">
+        <h4 class="mb-3 text-white">Application Operations</h4>
+
+        <!-- Applied status actions -->
+        <div v-if="canShortlist" class="d-flex gap-2">
+          <button @click="shortlist" class="btn btn-success">Shortlist Candidate</button>
+          <button @click="action = 'reject'" class="btn btn-danger">Reject Application</button>
+        </div>
+
+        <!-- Shortlisted actions -->
+        <div v-if="canScheduleInterview">
+          <div v-if="action !== 'interview'" class="d-flex gap-2">
+            <button @click="action = 'interview'" class="btn btn-primary">Schedule Interview</button>
+            <button @click="action = 'reject'" class="btn btn-danger">Reject Application</button>
+          </div>
+          <div class="glass-panel mt-3" v-else>
+            <h5 class="mb-3 text-white">Schedule Interview</h5>
+            <div class="row mb-3">
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Interview Date & Time</label>
+                <input v-model="interviewForm.interview_date" type="datetime-local" class="form-control" required>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Location / Online Link</label>
+                <input v-model="interviewForm.interview_location" type="text" class="form-control" placeholder="e.g. Google Meet Link" required>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button @click="scheduleInterview" class="btn btn-success">Save Schedule</button>
+              <button @click="action = null" class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interview Scheduled actions -->
+        <div v-if="canReleaseOffer">
+          <div v-if="action !== 'offer'" class="d-flex gap-2">
+            <button @click="action = 'offer'" class="btn btn-success">Release Offer Letter</button>
+            <button @click="action = 'reject'" class="btn btn-danger">Reject Application</button>
+          </div>
+          <div class="glass-panel mt-3 border border-success" v-else>
+            <h5 class="mb-3 text-success">Release Offer Details</h5>
+            <div class="row mb-3">
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Annual Salary (INR)</label>
+                <input v-model.number="offerForm.salary" type="number" min="1" class="form-control" placeholder="e.g. 1200000" required>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Joining Date</label>
+                <input v-model="offerForm.joining_date" type="date" class="form-control" required>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button @click="releaseOffer" class="btn btn-success">Generate & Release Offer</button>
+              <button @click="action = null" class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Offer Released waiting text -->
+        <div v-if="application.status === APPLICATION_STATUS.OFFER_RELEASED" class="alert alert-info py-2">
+          Waiting for the student to accept or reject the released offer.
+        </div>
+
+        <!-- Offer Accepted placed status -->
+        <div v-if="application.status === APPLICATION_STATUS.OFFER_ACCEPTED" class="alert alert-success py-3">
+          <p class="mb-2"><strong>The student has accepted your offer!</strong> The candidate has been marked as placed.</p>
+          <button @click="downloadPlacementLetter" class="btn btn-success btn-sm">Download Placement Letter</button>
+        </div>
+
+        <!-- Reject feedback block -->
+        <div v-if="action === 'reject' && canReject" class="glass-panel mt-3 border border-danger">
+          <h5 class="mb-3 text-danger">Reject Candidate</h5>
+          <div class="mb-3">
+            <label class="form-label">Rejection Feedback / Reason</label>
+            <textarea v-model="rejectFeedback" class="form-control" rows="2" placeholder="Write feedback for the student..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button @click="reject" class="btn btn-danger">Confirm Rejection</button>
+            <button @click="action=null; rejectFeedback = ''" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="mt-4 pt-3 border-top border-secondary text-muted text-center">
+        This application has reached a final state (Rejected or Offer Rejected). No further actions can be taken.
+      </div>
+
+    </div>
+  </div>
 </template>

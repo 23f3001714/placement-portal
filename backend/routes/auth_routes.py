@@ -8,6 +8,7 @@ api = Api(auth_bp)
 
 class StudentRegister(Resource):
     def post(self):
+        # this is simply only temporary
         try:
             return {'message': register_student(data=request.get_json())}, 201
         except KeyError as e:
@@ -29,6 +30,7 @@ class CompanyRegister(Resource):
 class Login(Resource):
     def post(self):
         try:
+            #remember code 
             return login(data=request.get_json()), 200
         except ValueError as e:
             return {'error': str(e)}, 401

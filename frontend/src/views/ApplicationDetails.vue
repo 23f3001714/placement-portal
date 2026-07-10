@@ -83,50 +83,108 @@
 </script>
 
 <template>
-    <div class="container py-4">
-        <div class="text-center">
-            <h1>Application Details</h1>
-        </div>
-
-        <div v-if="error" class="alert alert-danger">
-            {{ error }}
-            <button class="btn btn-danger" @click="logout">Try login again</button>
-        </div>
-
-        <div v-if="application">
-            <div class="text-end mb-3">
-                <button @click="router.push({ name: 'admin-dashboard' })" class="btn btn-dark">Back to Dashboard</button>
-                <button @click="logout" class="btn btn-danger">Logout</button>
-            </div>
-
-            <p><strong>Student:</strong>
-                <button @click="router.push({ name: 'student-details', params: { id: application.student_id } })" class="btn btn-link">{{ application.student_name }}</button>
-                <button @click="downloadResume(application.student_id)" class="btn btn-primary">Download Resume</button>
-            </p>
-            <p><strong>Job:</strong>
-                <button @click="router.push({ name: 'job-details', params: { id: application.job_id } })" class="btn btn-link">{{ application.job_title }} @ {{ application.company_name }}</button>
-            </p>
-            <p><strong>Application ID:</strong> {{ application.id }}</p>
-            <p><strong>Current Status:</strong> {{ application.status }}</p>
-            <p><strong>Applied Date:</strong> {{ formatDate(application.applied_at) }}</p>
-
-            <div v-if="application.interview_date">
-                <p><strong>Interview Date:</strong> {{ formatDateTime(application.interview_date) }}</p>
-                <p v-if="application.interview_location"><strong>Interview Location:</strong> {{ application.interview_location }}</p>
-            </div>
-
-            <div v-if="application.salary">
-                <h5 class="mt-3">Offer Details</h5>
-                <p><strong>Salary:</strong> Rs. {{ application.salary?.toLocaleString() }}</p>
-                <p><strong>Joining Date:</strong> {{ formatDate(application.joining_date) }}</p>
-                <button v-if="application.offer_letter_path" @click="downloadOfferLetter" class="btn btn-primary">Download Offer Letter</button>
-                <button v-if="application.status == 'offer_accepted'" @click="downloadPlacementLetter" class="btn btn-primary">Download Placement Letter</button>
-            </div>
-
-            <div v-if="application.feedback">
-                <h5 class="mt-3">Feedback</h5>
-                <p>{{ application.feedback }}</p>
-            </div>
-        </div>
+  <div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+      <div>
+        <h1 class="gradient-text fw-bold mb-0">Application Details</h1>
+        <p class="text-muted mb-0" v-if="application">Viewing details for Application #{{ application.id }}</p>
+      </div>
+      <div class="mt-3 mt-md-0 d-flex gap-2">
+        <button @click="router.push({ name: 'admin-dashboard' })" class="btn btn-secondary">Back to Dashboard</button>
+        <button class="btn btn-danger" @click="logout">Logout</button>
+      </div>
     </div>
+
+    <div v-if="error" class="alert alert-danger d-flex justify-content-between align-items-center mb-4">
+      <span>{{ error }}</span>
+      <button class="btn btn-danger btn-sm" @click="logout">Try login again</button>
+    </div>
+
+    <div v-if="application" class="glass-card" style="max-width: 800px; margin: 0 auto;">
+      <h3 class="border-bottom border-secondary pb-2 mb-4 text-white">Application Information</h3>
+      
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Student Name</label>
+          <div class="d-flex align-items-center gap-2">
+            <button @click="router.push({ name: 'student-details', params: { id: application.student_id } })" class="btn btn-link text-info fw-bold p-0 border-0" style="text-decoration:none;">
+              {{ application.student_name }}
+            </button>
+            <button @click="downloadResume(application.student_id)" class="btn btn-primary btn-sm ms-2">Download Resume</button>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Job Opening</label>
+          <div>
+            <button @click="router.push({ name: 'job-details', params: { id: application.job_id } })" class="btn btn-link text-info fw-bold p-0 border-0 text-start" style="text-decoration:none;">
+              {{ application.job_title }} @ {{ application.company_name }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Application ID</label>
+          <p class="text-white fw-bold">#{{ application.id }}</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Current Status</label>
+          <div>
+            <span :class="{
+              'badge-custom badge-applied': application.status === 'applied',
+              'badge-custom badge-shortlisted': application.status === 'shortlisted',
+              'badge-custom badge-interview': application.status === 'interview_scheduled',
+              'badge-custom badge-success': application.status === 'offer_released' || application.status === 'offer_accepted',
+              'badge-custom badge-danger': application.status === 'rejected' || application.status === 'offer_rejected'
+            }">
+              {{ application.status }}
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Applied Date</label>
+          <p class="text-light">{{ formatDate(application.applied_at) }}</p>
+        </div>
+      </div>
+
+      <!-- Interview Details -->
+      <div v-if="application.interview_date" class="glass-panel mb-4">
+        <h5 class="text-warning mb-3">Interview Details</h5>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <p class="mb-0"><strong>Schedule Time:</strong> <span class="text-light">{{ formatDateTime(application.interview_date) }}</span></p>
+          </div>
+          <div class="col-md-6 mb-2" v-if="application.interview_location">
+            <p class="mb-0"><strong>Location / Link:</strong> <span class="text-light">{{ application.interview_location }}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offer Details -->
+      <div v-if="application.salary" class="glass-panel mb-4 border border-success">
+        <h5 class="text-success mb-3">Offer & Placement Package</h5>
+        <div class="row mb-3">
+          <div class="col-md-6 mb-2">
+            <p class="mb-0"><strong>Salary Offered:</strong> <span class="text-light">Rs. {{ application.salary?.toLocaleString() }}</span></p>
+          </div>
+          <div class="col-md-6 mb-2">
+            <p class="mb-0"><strong>Expected Joining Date:</strong> <span class="text-light">{{ formatDate(application.joining_date) }}</span></p>
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button v-if="application.offer_letter_path" @click="downloadOfferLetter" class="btn btn-primary btn-sm">Download Offer Letter</button>
+          <button v-if="application.status == 'offer_accepted'" @click="downloadPlacementLetter" class="btn btn-success btn-sm">Download Placement Letter</button>
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      <div v-if="application.feedback" class="glass-panel mb-3">
+        <h5 class="text-info mb-2">Feedback & Comments</h5>
+        <p class="mb-0 text-light">{{ application.feedback }}</p>
+      </div>
+    </div>
+  </div>
 </template>

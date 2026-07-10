@@ -13,6 +13,7 @@
     const description = ref('')
     const error = ref(null)
 
+    // lookup after this - make sure fields match
     const register = async () => {
         error.value = null
         try {
@@ -38,27 +39,51 @@
 </script>
 
 <template>
-  <div class="text-center">
-    <h1>Company Registration</h1>
+  <div class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="glass-card w-100" style="max-width: 500px; border: 1px solid #333;">
+      <div class="text-center mb-4">
+        <h2 class="h3 mb-2 text-primary">Company Registration</h2>
+        <p class="text-muted small">Enter details to register your company profile</p>
+      </div>
 
-    <form class="form-group" @submit.prevent="register">
-      <label for="name">Company Name:</label>
-      <input type="text" v-model="name" placeholder="Company Name" id="name" class="form-control my-2" required/>
-      <label for="email">Email:</label>
-      <input type="email" v-model="email" placeholder="Email" id="email" class="form-control my-2" required/>
-      <label for="password">Password:</label>
-      <input type="password" v-model="password" placeholder="Password" id="password" class="form-control my-2" required/>
-      <label for="hr_email">HR Email:</label>
-      <input type="email" v-model="hr_email" placeholder="HR email" id="hr_email" class="form-control my-2" required/>
-      <label for="industry">Industry:</label>
-      <input type="text" v-model="industry" placeholder="Industry" id="industry" class="form-control my-2" required/>
-      <label for="description">Description:</label>
-      <input type="text" v-model="description" placeholder="Description" id="description" class="form-control my-2" required/>
+      <form @submit.prevent="register">
+        <div class="mb-3">
+          <label for="name" class="form-label">Company Name</label>
+          <input type="text" v-model="name" placeholder="Enter Company Name" id="name" class="form-control" required/>
+        </div>
 
-      <button type="submit" class="btn btn-primary">Register</button>
-      <button type="button" class="btn btn-secondary ms-2" @click="router.push({ name: 'home' })">Back</button>
-    </form>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" v-model="email" placeholder="Enter Email" id="email" class="form-control" required/>
+        </div>
 
-    <p v-if="error" class="text-danger mt-2">{{ error }}</p>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" v-model="password" placeholder="Enter Password" id="password" class="form-control" required/>
+        </div>
+
+        <div class="mb-3">
+          <label for="hr_email" class="form-label">HR Email</label>
+          <input type="email" v-model="hr_email" placeholder="Enter HR Contact Email" id="hr_email" class="form-control" required/>
+        </div>
+
+        <div class="mb-3">
+          <label for="industry" class="form-label">Industry</label>
+          <input type="text" v-model="industry" placeholder="e.g. IT, Finance" id="industry" class="form-control" required/>
+        </div>
+
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea v-model="description" placeholder="Company Description" id="description" class="form-control" rows="2" required></textarea>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+          <button type="button" class="btn btn-secondary" @click="router.push({ name: 'home' })">Go Back</button>
+          <button type="submit" class="btn btn-primary">Register</button>
+        </div>
+      </form>
+
+      <div v-if="error" class="alert alert-danger mt-3 text-center py-2">{{ error }}</div>
+    </div>
   </div>
 </template>

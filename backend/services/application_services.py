@@ -163,10 +163,12 @@ def create_application(job_id, student_id):
         raise PermissionError('Cannot apply to a blacklisted company')
     if student.cgpa < job.min_cgpa:
         raise ValueError(f'CGPA {student.cgpa} is below the minimum required {job.min_cgpa}')
-    if student.branch not in [b.strip() for b in job.eligible_branches.split(',')]:
-        raise ValueError(f'Your branch {student.branch} is not eligible for this job')
-    if str(student.graduation_year) not in [y.strip() for y in job.eligible_graduation_years.split(',')]:
-        raise ValueError(f'Your graduation year {student.graduation_year} is not eligible for this job')
+    if job.eligible_branches and job.eligible_branches.strip():
+        if student.branch not in [b.strip() for b in job.eligible_branches.split(',')]:
+            raise ValueError(f'Your branch {student.branch} is not eligible for this job')
+    if job.eligible_graduation_years and job.eligible_graduation_years.strip():
+        if str(student.graduation_year) not in [y.strip() for y in job.eligible_graduation_years.split(',')]:
+            raise ValueError(f'Your graduation year {student.graduation_year} is not eligible for this job')
     if Application.query.filter(Application.student_id == student_id, Application.job_id == job_id).first():
         raise ValueError('Already applied')
     if Application.query.filter(Application.student_id == student_id, Application.status == ApplicationStatus.OFFER_ACCEPTED).first():

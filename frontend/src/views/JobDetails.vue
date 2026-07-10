@@ -79,57 +79,108 @@
 
 <template>
     <div class="container py-4">
-        <div class="text-center">
-            <h1>Job Details</h1>
-        </div>
-
-        <div v-if="error" class="alert alert-danger">
-            {{ error }}
-            <button class="btn btn-danger" @click="logout">Try login again</button>
-        </div>
-
-        <div v-if="job">
-            <div class="text-end mb-3">
-                <button @click="router.push({ name: 'admin-dashboard' })" class="btn btn-dark">Back to Dashboard</button>
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <div>
+                <h1 class="gradient-text fw-bold mb-0">Job Drive Profile</h1>
+                <p class="text-muted mb-0" v-if="job">Admin Job Drive Management</p>
+            </div>
+            <div class="mt-3 mt-md-0 d-flex gap-2">
+                <button @click="router.push({ name: 'admin-dashboard' })" class="btn btn-secondary">Back to Dashboard</button>
                 <button @click="logout" class="btn btn-danger">Logout</button>
             </div>
+        </div>
 
-            <p><strong>ID:</strong> {{ job.id }}</p>
-            <p><strong>Title:</strong> {{ job.title }}</p>
-            <p><strong>Company:</strong>
-                <button @click="router.push({ name: 'company-details', params: { id: job.company_id } })" class="btn btn-link p-0">{{ job.company_name }}</button>
-            </p>
-            <p><strong>Description:</strong> {{ job.description }}</p>
-            <p><strong>Deadline:</strong> {{ formatDate(job.deadline) }}</p>
-            <p><strong>Vacancies:</strong> {{ job.vacancies }}</p>
-            <p><strong>Skills Required:</strong> {{ job.skills_required }}</p>
-            <p><strong>Min CGPA:</strong> {{ job.min_cgpa }}</p>
-            <p><strong>Eligible Branches:</strong> {{ job.eligible_branches }}</p>
-            <p><strong>Eligible Graduation Years:</strong> {{ job.eligible_graduation_years }}</p>
-            <p><strong>Status:</strong> {{ job.status }}</p>
-            <div v-if="job.status === JOB_STATUS.PENDING">
-                <button @click="jobApproval(route.params.id, JOB_STATUS.REJECTED)" class="btn btn-danger">Reject</button>
-                <button @click="jobApproval(route.params.id, JOB_STATUS.OPEN)" class="btn btn-success">Approve</button>
+        <div v-if="error" class="alert alert-danger d-flex justify-content-between align-items-center mb-4">
+            <span>{{ error }}</span>
+            <button class="btn btn-danger btn-sm" @click="logout">Try login again</button>
+        </div>
+
+        <div v-if="job" class="glass-card" style="max-width: 950px; margin: 0 auto;">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-4">
+                <h3 class="mb-0 text-white">{{ job.title }}</h3>
+                <span :class="{
+                    'badge-custom badge-success': job.status === JOB_STATUS.OPEN,
+                    'badge-custom badge-danger': job.status === JOB_STATUS.CLOSED || job.status === JOB_STATUS.REJECTED,
+                    'badge-custom badge-interview': job.status === JOB_STATUS.PENDING
+                }">{{ job.status }}</span>
             </div>
 
-            <div v-if="job.status !== JOB_STATUS.REJECTED && job.status !== JOB_STATUS.PENDING">
-                <div v-if="stats">
-                    <h4 class="mt-4">Stats</h4>
-                    <p><strong>Total Applications:</strong> {{ stats.total_applications }}</p>
-                    <p><strong>Accepted:</strong> {{ stats.accepted_applications }}</p>
-                    <p><strong>Total Placements:</strong> {{ stats.total_placements }}</p>
+            <!-- Job Info Grid -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <p class="mb-2"><strong>Job ID:</strong> <span class="text-light ms-2">#{{ job.id }}</span></p>
+                    <p class="mb-2"><strong>Company:</strong> 
+                        <button @click="router.push({ name: 'company-details', params: { id: job.company_id } })" class="btn btn-link text-info fw-bold p-0 border-0" style="text-decoration:none;">
+                            {{ job.company_name }}
+                        </button>
+                    </p>
+                    <p class="mb-2"><strong>Application Deadline:</strong> <span class="text-light ms-2 text-warning">{{ formatDate(job.deadline) }}</span></p>
+                    <p class="mb-2"><strong>Vacancies:</strong> <span class="text-light ms-2">{{ job.vacancies }}</span></p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="mb-2"><strong>Minimum CGPA:</strong> <span class="text-light ms-2">{{ job.min_cgpa }}</span></p>
+                    <p class="mb-2"><strong>Eligible Branches:</strong> <span class="text-light ms-2">{{ job.eligible_branches }}</span></p>
+                    <p class="mb-2"><strong>Eligible Graduation Years:</strong> <span class="text-light ms-2">{{ job.eligible_graduation_years }}</span></p>
+                    <p class="mb-2"><strong>Required Skills:</strong> <span class="text-light ms-2">{{ job.skills_required }}</span></p>
+                </div>
+            </div>
+
+            <div class="glass-panel mb-4">
+                <h5 class="text-white mb-2">Detailed Job Description</h5>
+                <p class="text-light mb-0">{{ job.description }}</p>
+            </div>
+
+            <!-- Pending approvals controls -->
+            <div v-if="job.status === JOB_STATUS.PENDING" class="mb-4 pt-3 border-top border-secondary">
+                <h5 class="text-white mb-3">Administrative Actions</h5>
+                <div class="d-flex gap-2">
+                    <button @click="jobApproval(route.params.id, JOB_STATUS.OPEN)" class="btn btn-success">Approve Job Posting</button>
+                    <button @click="jobApproval(route.params.id, JOB_STATUS.REJECTED)" class="btn btn-danger">Reject Job Posting</button>
+                </div>
+            </div>
+
+            <!-- Job Statistics & Candidates section -->
+            <div v-if="job.status !== JOB_STATUS.REJECTED && job.status !== JOB_STATUS.PENDING" class="mt-4 pt-3 border-top border-secondary">
+                
+                <!-- Small Stats Blocks -->
+                <div v-if="stats" class="row text-center mb-4 g-3">
+                    <div class="col-4">
+                        <div class="glass-panel p-2">
+                            <span class="text-muted small text-uppercase">Applications</span>
+                            <h4 class="mb-0 text-white fw-bold">{{ stats.total_applications }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="glass-panel p-2">
+                            <span class="text-muted small text-uppercase">Accepted Offers</span>
+                            <h4 class="mb-0 text-success fw-bold">{{ stats.accepted_applications }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="glass-panel p-2">
+                            <span class="text-muted small text-uppercase">Secured Placements</span>
+                            <h4 class="mb-0 text-info fw-bold">{{ stats.total_placements }}</h4>
+                        </div>
+                    </div>
                 </div>
 
-                <select v-model="applicationState" class="form-select mb-3">
-                    <option value="">All Applications</option>
-                    <option v-for="(value, key) in APPLICATION_STATUS" :key="key" :value="value">
-                        {{ key }}
-                    </option>
-                </select>
+                <!-- Candidates Section -->
+                <h4 class="text-white mb-3">Applicants List</h4>
+                
+                <div class="mb-3">
+                    <label class="form-label">Filter Applications by Status</label>
+                    <select v-model="applicationState" class="form-select">
+                        <option value="">All Candidates</option>
+                        <option v-for="(value, key) in APPLICATION_STATUS" :key="key" :value="value">
+                            {{ key }}
+                        </option>
+                    </select>
+                </div>
 
-                <h3 class="mt-3">Applications: {{ getFilteredApplications.length }}</h3>
-                <div v-if="getFilteredApplications.length > 0">
-                    <table class="table text-center">
+                <h5 class="text-white mt-3 mb-2">Candidates Found ({{ getFilteredApplications.length }})</h5>
+                <div v-if="getFilteredApplications.length > 0" class="custom-table-container">
+                    <table class="table text-center table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -137,27 +188,38 @@
                                 <th>CGPA</th>
                                 <th>Applied Date</th>
                                 <th>Status</th>
-                                <th>Details</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="application in getFilteredApplications">
+                            <tr v-for="application in getFilteredApplications" :key="application.id">
                                 <td>{{ application.id }}</td>
                                 <td>
-                                    <button @click="router.push({ name: 'student-details', params: { id: application.student_id } })" class="btn btn-link p-0">{{ application.student_name }}</button>
+                                    <button @click="router.push({ name: 'student-details', params: { id: application.student_id } })" class="btn btn-link text-info fw-bold p-0 border-0" style="text-decoration:none;">
+                                        {{ application.student_name }}
+                                    </button>
                                 </td>
                                 <td>{{ application.cgpa }}</td>
                                 <td>{{ formatDate(application.applied_at) }}</td>
-                                <td>{{ application.status }}</td>
                                 <td>
-                                    <button @click="router.push({ name: 'application-details', params: { id: application.id } })" class="btn btn-primary">View</button>
+                                    <span :class="{
+                                        'badge-custom badge-applied': application.status === 'applied',
+                                        'badge-custom badge-shortlisted': application.status === 'shortlisted',
+                                        'badge-custom badge-interview': application.status === 'interview_scheduled',
+                                        'badge-custom badge-success': application.status === 'offer_released' || application.status === 'offer_accepted',
+                                        'badge-custom badge-danger': application.status === 'rejected' || application.status === 'offer_rejected'
+                                    }">{{ application.status }}</span>
+                                </td>
+                                <td>
+                                    <button @click="router.push({ name: 'application-details', params: { id: application.id } })" class="btn btn-primary btn-sm">View details</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <p v-else class="text-muted">No applications available</p>
+                <p v-else class="text-muted py-3 text-center">No applications match this status filter.</p>
             </div>
+
         </div>
     </div>
 </template>

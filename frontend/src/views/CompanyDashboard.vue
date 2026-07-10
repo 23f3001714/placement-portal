@@ -202,326 +202,391 @@
 
 <template>
     <div class="container py-4">
-        <div class="text-center">
-            <h1>Company Dashboard</h1>
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <div>
+                <h1 class="gradient-text fw-bold mb-0">Company Dashboard</h1>
+                <p class="text-muted mb-0" v-if="profile">Welcome, {{ profile.name }}</p>
+            </div>
+            <div v-if="profile" class="mt-3 mt-md-0 d-flex gap-2">
+                <button class="btn btn-danger" @click="logout">Logout</button>
+            </div>
         </div>
 
-        <div v-if="error" class="alert alert-danger">
-            {{ error }}
-            <button class="btn btn-danger" @click="logout">Try login again</button>
+        <div v-if="error" class="alert alert-danger d-flex justify-content-between align-items-center mb-4">
+            <span>{{ error }}</span>
+            <button class="btn btn-danger btn-sm" @click="logout">Try login again</button>
         </div>
 
-        <div v-if="successMsg" class="alert alert-success">
+        <div v-if="successMsg" class="alert alert-success mb-4">
             {{ successMsg }}
         </div>
 
         <div v-if="profile">
-            <p class="text-muted text-center">Welcome, {{ profile.name }}</p>
-            <div class="text-end">
-                <button class="btn btn-danger" @click="logout">Logout</button>
-            </div>
-
-            <div v-if="stats">
-                <h3>Overview Statistics</h3>
-                <div class="row text-center mt-3">
-                    <div class="col">
-                        <h5>Total Jobs</h5>
-                        <p>{{ stats.total_jobs }}</p>
+            <!-- Profile Section -->
+            <div class="glass-card mb-4">
+                <h3 class="border-bottom border-secondary pb-2 mb-3">Company Profile</h3>
+                <div v-if="!isEditingProfile">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <p class="mb-2"><strong>Name:</strong> <span class="text-light">{{ profile.name }}</span></p>
+                            <p class="mb-2"><strong>HR Email:</strong> <span class="text-light">{{ profile.hr_email }}</span></p>
+                            <p class="mb-2"><strong>Industry:</strong> <span class="text-light">{{ profile.industry }}</span></p>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <p class="mb-2"><strong>Location:</strong> <span class="text-light">{{ profile.location || 'N/A' }}</span></p>
+                            <p class="mb-2"><strong>Website:</strong> <a :href="profile.website_link" target="_blank" class="text-info" v-if="profile.website_link">{{ profile.website_link }}</a><span class="text-light" v-else>N/A</span></p>
+                            <p class="mb-2">
+                                <strong>Status:</strong> 
+                                <span :class="profile.is_blacklisted ? 'badge-custom badge-danger ms-2' : 'badge-custom badge-success ms-2'">
+                                    {{ profile.is_blacklisted ? 'Blacklisted' : 'Active' }}
+                                </span>
+                            </p>
+                        </div>
                     </div>
-                    <div class="col">
-                        <h5>Applications</h5>
-                        <p>{{ stats.total_applications }}</p>
+                    <p class="mt-2"><strong>Description:</strong> <span class="text-light">{{ profile.description }}</span></p>
+                    
+                    <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top border-secondary">
+                        <button v-if="!profile.is_blacklisted" @click="startEditProfile" class="btn btn-primary">Edit Profile</button>
+                        <button @click="exportCSV" :disabled="exportingCSV" class="btn btn-secondary">
+                            <span v-if="exportingCSV">Exporting...</span>
+                            <span v-else>Export Applicants CSV</span>
+                        </button>
+                        <button @click="monthlyReport" :disabled="exportingMonthlyReport" class="btn btn-secondary">
+                            <span v-if="exportingMonthlyReport">Generating...</span>
+                            <span v-else>Last Month Report</span>
+                        </button>
                     </div>
-                    <div class="col">
-                        <h5>Shortlisted</h5>
-                        <p>{{ stats.shortlisted_count }}</p>
+                </div>
+                <div v-else class="mt-2">
+                    <h5 class="mb-3 text-white">Edit Company Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">HR Email</label>
+                            <input v-model="editForm.hr_email" type="email" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Industry</label>
+                            <input v-model="editForm.industry" type="text" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Location</label>
+                            <input v-model="editForm.location" type="text" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Website URL</label>
+                            <input v-model="editForm.website_link" type="text" class="form-control">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea v-model="editForm.description" class="form-control" rows="3"></textarea>
+                        </div>
                     </div>
-                    <div class="col">
-                        <h5>Placements</h5>
-                        <p>{{ stats.placements_count }}</p>
+                    <div class="d-flex gap-2">
+                        <button @click="saveProfile" class="btn btn-success">Save Changes</button>
+                        <button @click="cancelEditProfile" class="btn btn-secondary">Cancel</button>
                     </div>
                 </div>
             </div>
 
-<!-- Profile Section -->
-            <h3 class="mt-5">Company Profile</h3>
-            <div v-if="!isEditingProfile">
-                <div class="row mt-3">
-                    <div class="col-6">
-                        <p><strong>Name:</strong> {{ profile.name }}</p>
-                        <p><strong>HR Email:</strong> {{ profile.hr_email }}</p>
-                        <p><strong>Industry:</strong> {{ profile.industry }}</p>
+            <!-- Stats -->
+            <div v-if="stats" class="glass-card mb-4">
+                <h3 class="border-bottom border-secondary pb-2 mb-3">Overview Statistics</h3>
+                <div class="row text-center g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="glass-panel p-3">
+                            <h6 class="text-muted text-uppercase small">Total Jobs</h6>
+                            <h2 class="mb-0 text-primary fw-bold">{{ stats.total_jobs }}</h2>
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <p><strong>Location:</strong> {{ profile.location || 'N/A' }}</p>
-                        <p><strong>Website:</strong> {{ profile.website_link || 'N/A' }}</p>
-                        <p><strong>Status:</strong> {{ profile.is_blacklisted ? 'Blacklisted' : 'Active' }}</p>
+                    <div class="col-6 col-md-3">
+                        <div class="glass-panel p-3">
+                            <h6 class="text-muted text-uppercase small">Applications</h6>
+                            <h2 class="mb-0 text-info fw-bold">{{ stats.total_applications }}</h2>
+                        </div>
                     </div>
-                </div>
-                <p><strong>Description:</strong> {{ profile.description }}</p>
-                <button v-if="!profile.is_blacklisted" @click="startEditProfile" class="btn btn-primary">Edit Profile</button>
-            </div>
-            <div v-else class="mt-3">
-                <div class="row">
-                    <div class="col-6 mb-2">
-                        <label>HR Email</label>
-                        <input v-model="editForm.hr_email" type="email" class="form-control">
+                    <div class="col-6 col-md-3">
+                        <div class="glass-panel p-3">
+                            <h6 class="text-muted text-uppercase small">Shortlisted</h6>
+                            <h2 class="mb-0 text-warning fw-bold">{{ stats.shortlisted_count }}</h2>
+                        </div>
                     </div>
-                    <div class="col-6 mb-2">
-                        <label>Industry</label>
-                        <input v-model="editForm.industry" type="text" class="form-control">
-                    </div>
-                    <div class="col-6 mb-2">
-                        <label>Location</label>
-                        <input v-model="editForm.location" type="text" class="form-control">
-                    </div>
-                    <div class="col-6 mb-2">
-                        <label>Website</label>
-                        <input v-model="editForm.website_link" type="text" class="form-control">
-                    </div>
-                    <div class="col-12 mb-2">
-                        <label>Description</label>
-                        <textarea v-model="editForm.description" class="form-control" rows="3"></textarea>
+                    <div class="col-6 col-md-3">
+                        <div class="glass-panel p-3">
+                            <h6 class="text-muted text-uppercase small">Placements</h6>
+                            <h2 class="mb-0 text-success fw-bold">{{ stats.placements_count }}</h2>
+                        </div>
                     </div>
                 </div>
-                <button @click="saveProfile" class="btn btn-success">Save</button>
-                <button @click="cancelEditProfile" class="btn btn-secondary">Cancel</button>
             </div>
 
-            <div class="mt-3">
-                <button @click="exportCSV" :disabled="exportingCSV" class="btn btn-primary">Export applicants data</button>
-                <button @click="monthlyReport" :disabled="exportingMonthlyReport" class="btn btn-primary mx-3">Generate last month report</button>
-            </div>
+            <!-- Jobs Management -->
+            <div class="glass-card mb-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                    <h3 class="mb-0">Jobs Management</h3>
+                    <button v-if="!profile.is_blacklisted" @click="showCreateJob = !showCreateJob" class="btn btn-success btn-sm">
+                        {{ showCreateJob ? 'Cancel' : ' + Create Job' }}
+                    </button>
+                </div>
 
-<!-- Jobs Section -->
-            <h3 class="mt-5">Jobs Management</h3>
-            <div v-if="profile.is_blacklisted" class="alert alert-danger mb-3">
-                Your account is blacklisted. You cant create jobs.
-            </div>
-            <button v-if="!profile.is_blacklisted" @click="showCreateJob = !showCreateJob" class="btn btn-primary mb-3">
-                {{ showCreateJob ? 'Cancel' : ' + Create Job' }}
-            </button>
+                <div v-if="profile.is_blacklisted" class="alert alert-danger mb-3">
+                    Your account is blacklisted. You cannot create jobs.
+                </div>
 
-            <div v-if="showCreateJob" class="mb-4">
-                <h4>Create New Job</h4>
-                <div class="row mb-2">
-                    <div class="col-6 mb-2">
-                        <label>Title</label>
-                        <input v-model="newJob.title" type="text" class="form-control" required>
+                <!-- Create Job Form -->
+                <div v-if="showCreateJob" class="glass-panel mb-4">
+                    <h4 class="mb-3 text-white">Create New Job Posting</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Title</label>
+                            <input v-model="newJob.title" type="text" class="form-control" placeholder="e.g. Frontend Engineer" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Deadline</label>
+                            <input v-model="newJob.deadline" type="datetime-local" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Vacancies</label>
+                            <input v-model.number="newJob.vacancies" type="number" min="1" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Min CGPA</label>
+                            <input v-model.number="newJob.min_cgpa" type="number" step="0.1" min="0" max="10" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Eligible Branches</label>
+                            <input v-model="newJob.eligible_branches" type="text" class="form-control" placeholder="CSE,IT,AIML" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Skills Required</label>
+                            <input v-model="newJob.skills_required" type="text" class="form-control" placeholder="Python,JavaScript,SQL" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Eligible Graduation Years</label>
+                            <input v-model="newJob.eligible_graduation_years" type="text" class="form-control" placeholder="2025,2026" required>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea v-model="newJob.description" class="form-control" rows="3" required></textarea>
+                        </div>
                     </div>
-                    <div class="col-6 mb-2">
-                        <label>Deadline</label>
-                        <input v-model="newJob.deadline" type="datetime-local" class="form-control" required>
-                    </div>
-                    <div class="col-4 mb-2">
-                        <label>Vacancies</label>
-                        <input v-model.number="newJob.vacancies" type="number" min="1" class="form-control" required>
-                    </div>
-                    <div class="col-4 mb-2">
-                        <label>Min CGPA</label>
-                        <input v-model.number="newJob.min_cgpa" type="number" step="0.1" min="0" max="10" class="form-control" required>
-                    </div>
-                    <div class="col-4 mb-2">
-                        <label>Eligible Branches</label>
-                        <input v-model="newJob.eligible_branches" type="text" class="form-control" placeholder="CSE,IT,AIML" required>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <label>Skills Required</label>
-                        <input v-model="newJob.skills_required" type="text" class="form-control" placeholder="Python,JavaScript,SQL" required>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <label>Eligible Graduation Years</label>
-                        <input v-model="newJob.eligible_graduation_years" type="text" class="form-control" placeholder="2025,2026" required>
-                    </div>
-                    <div class="col-12 mb-2">
-                        <label>Description</label>
-                        <textarea v-model="newJob.description" class="form-control" rows="3" required></textarea>
+                    <button @click="createJob" class="btn btn-success">Submit Job</button>
+                </div>
+
+                <!-- Pending Jobs -->
+                <div class="mb-4" v-if="pendingJobs.length > 0">
+                    <h5 class="text-warning mb-3">Pending Approval ({{ pendingJobs.length }})</h5>
+                    <div class="custom-table-container">
+                        <table class="table text-center table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Title</th>
+                                    <th>Vacancies</th>
+                                    <th>Status</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in pendingJobs" :key="job.id">
+                                    <td>{{ job.id }}</td>
+                                    <td class="fw-bold text-white">{{ job.title }}</td>
+                                    <td>{{ job.vacancies }}</td>
+                                    <td><span class="badge-custom badge-interview">Pending</span></td>
+                                    <td>
+                                        <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary btn-sm">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <button @click="createJob" class="btn btn-success">Submit Job</button>
+
+                <!-- Rejected Jobs -->
+                <div class="mb-4" v-if="rejectedJobs.length > 0">
+                    <h5 class="text-danger mb-3">Rejected Jobs ({{ rejectedJobs.length }})</h5>
+                    <div class="custom-table-container">
+                        <table class="table text-center table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in rejectedJobs" :key="job.id">
+                                    <td>{{ job.id }}</td>
+                                    <td class="fw-bold text-white">{{ job.title }}</td>
+                                    <td><span class="badge-custom badge-danger">Rejected</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Open Jobs -->
+                <div class="mb-4">
+                    <div class="mb-3">
+                        <label class="form-label">Search Jobs</label>
+                        <input v-model="jobSearch" type="text" class="form-control" placeholder="Search jobs by title...">
+                    </div>
+
+                    <h5 class="text-success mb-3">Open Jobs ({{ filteredOpenJobs.length }})</h5>
+                    <div v-if="filteredOpenJobs.length > 0" class="custom-table-container">
+                        <table class="table text-center table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Title</th>
+                                    <th>Deadline</th>
+                                    <th>Vacancies</th>
+                                    <th>Details</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in filteredOpenJobs" :key="job.id">
+                                    <td>{{ job.id }}</td>
+                                    <td class="fw-bold text-white">{{ job.title }}</td>
+                                    <td class="text-warning">{{ formatDate(job.deadline) }}</td>
+                                    <td>{{ job.vacancies }}</td>
+                                    <td>
+                                        <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary btn-sm">View</button>
+                                    </td>
+                                    <td>
+                                        <button @click="confirmCloseJob(job)" class="btn btn-danger btn-sm">Close</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="text-muted small ps-2">No active open jobs.</p>
+                </div>
+
+                <!-- Closed Jobs -->
+                <div class="mb-4">
+                    <h5 class="text-muted mb-3">Closed Jobs ({{ filteredClosedJobs.length }})</h5>
+                    <div v-if="filteredClosedJobs.length > 0" class="custom-table-container">
+                        <table class="table text-center table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Title</th>
+                                    <th>Deadline</th>
+                                    <th>Vacancies</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in filteredClosedJobs" :key="job.id">
+                                    <td>{{ job.id }}</td>
+                                    <td class="fw-bold text-white">{{ job.title }}</td>
+                                    <td>{{ formatDate(job.deadline) }}</td>
+                                    <td>{{ job.vacancies }}</td>
+                                    <td>
+                                        <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary btn-sm">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="text-muted small ps-2">No closed jobs.</p>
+                </div>
             </div>
 
-            <h4 class="mt-3">Pending Approval: {{ pendingJobs.length }}</h4>
-            <div v-if="pendingJobs.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Title</th>
-                            <th>Vacancies</th>
-                            <th>Status</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="job in pendingJobs">
-                            <td>{{ job.id }}</td>
-                            <td>{{ job.title }}</td>
-                            <td>{{ job.vacancies }}</td>
-                            <td>Pending</td>
-                            <td>
-                                <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary">View</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Applications Management -->
+            <div class="glass-card mb-4">
+                <h3 class="border-bottom border-secondary pb-2 mb-3">Applications Management</h3>
+                <div class="mb-3">
+                    <label class="form-label">Search Applications</label>
+                    <input v-model="appSearch" type="text" class="form-control" placeholder="Search by job title...">
+                </div>
+
+                <h5 class="mb-3">Received Applications ({{ filteredApplications.length }})</h5>
+                <div v-if="filteredApplications.length > 0" class="custom-table-container">
+                    <table class="table text-center table-hover">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Student</th>
+                                <th>Job Title</th>
+                                <th>Status</th>
+                                <th>Applied On</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="app in filteredApplications" :key="app.id">
+                                <td>{{ app.id }}</td>
+                                <td class="text-light fw-bold">{{ app.student_name }}</td>
+                                <td class="text-white">{{ app.job_title }}</td>
+                                <td>
+                                    <span :class="{
+                                        'badge-custom badge-applied': app.status === 'applied',
+                                        'badge-custom badge-shortlisted': app.status === 'shortlisted',
+                                        'badge-custom badge-interview': app.status === 'interview_scheduled',
+                                        'badge-custom badge-success': app.status === 'offer_released' || app.status === 'offer_accepted',
+                                        'badge-custom badge-danger': app.status === 'rejected' || app.status === 'offer_rejected'
+                                    }">
+                                        {{ app.status }}
+                                    </span>
+                                </td>
+                                <td>{{ formatDate(app.applied_at) }}</td>
+                                <td>
+                                    <button @click="router.push({name: 'company-application-details', params: {id: app.id}})" class="btn btn-primary btn-sm">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p v-else class="text-muted text-center py-4">No applications received yet.</p>
             </div>
 
-            <h4 class="mt-3">Rejected Jobs: {{ rejectedJobs.length }}</h4>
-            <div v-if="rejectedJobs.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Title</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="job in rejectedJobs">
-                            <td>{{ job.id }}</td>
-                            <td>{{ job.title }}</td>
-                            <td>Rejected</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div>
-                <input v-model="jobSearch" type="text" class="form-control" placeholder="Search jobs by title..">
-            </div>
-
-            <h4 class="mt-3">Open Jobs: {{ filteredOpenJobs.length }}</h4>
-            <div v-if="filteredOpenJobs.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Title</th>
-                            <th>Deadline</th>
-                            <th>Vacancies</th>
-                            <th>Details</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="job in filteredOpenJobs">
-                            <td>{{ job.id }}</td>
-                            <td>{{ job.title }}</td>
-                            <td>{{ formatDate(job.deadline) }}</td>
-                            <td>{{ job.vacancies }}</td>
-                            <td>
-                                <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary">View</button>
-                            </td>
-                            <td>
-                                <button @click="confirmCloseJob(job)" class="btn btn-danger">Close</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <h4 class="mt-3">Closed Jobs: {{ filteredClosedJobs.length }}</h4>
-            <div v-if="filteredClosedJobs.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Title</th>
-                            <th>Deadline</th>
-                            <th>Vacancies</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="job in filteredClosedJobs">
-                            <td>{{ job.id }}</td>
-                            <td>{{ job.title }}</td>
-                            <td>{{ formatDate(job.deadline) }}</td>
-                            <td>{{ job.vacancies }}</td>
-                            <td>
-                                <button @click="router.push({name: 'company-job-details', params: {id: job.id}})" class="btn btn-primary">View</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-<!-- Applications Section -->
-            <h3 class="mt-5">Applications Management</h3>
-            <div>
-                <input v-model="appSearch" type="text" class="form-control" placeholder="Search by job title..">
-            </div>
-
-            <h4 class="mt-3">Applications: {{ filteredApplications.length }}</h4>
-            <div v-if="filteredApplications.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Student</th>
-                            <th>Job Title</th>
-                            <th>Status</th>
-                            <th>Applied</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="app in filteredApplications">
-                            <td>{{ app.id }}</td>
-                            <td>{{ app.student_name }}</td>
-                            <td>{{ app.job_title }}</td>
-                            <td>{{ app.status }}</td>
-                            <td>{{ formatDate(app.applied_at) }}</td>
-                            <td>
-                                <button @click="router.push({name: 'company-application-details', params: {id: app.id}})" class="btn btn-primary">View</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-<!-- Placements Section -->
-            <h3 class="mt-5">Placements</h3>
-            <h4 class="mt-3">Placements: {{ placements?.length || 0 }}</h4>
-            <div v-if="placements?.length > 0">
-                <table class="table text-center">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Student</th>
-                            <th>Job Title</th>
-                            <th>Salary</th>
-                            <th>Placed On</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="placement in placements">
-                            <td>{{ placement.id }}</td>
-                            <td>{{ placement.student_name }}</td>
-                            <td>{{ placement.job_title }}</td>
-                            <td>{{ placement.salary?.toLocaleString() || 'N/A' }}</td>
-                            <td>{{ formatDate(placement.placed_at) }}</td>
-                            <td>
-                                <button @click="router.push({name: 'company-placement-details', params: {id: placement.id}})" class="btn btn-primary">View</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Placements -->
+            <div class="glass-card mb-4">
+                <h3 class="border-bottom border-secondary pb-2 mb-3">Placements</h3>
+                <h5 class="mb-3">Secured Placements ({{ placements?.length || 0 }})</h5>
+                <div v-if="placements?.length > 0" class="custom-table-container">
+                    <table class="table text-center table-hover">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Student</th>
+                                <th>Job Title</th>
+                                <th>Salary</th>
+                                <th>Placed On</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="placement in placements" :key="placement.id">
+                                <td>{{ placement.id }}</td>
+                                <td class="text-light fw-bold">{{ placement.student_name }}</td>
+                                <td class="text-white">{{ placement.job_title }}</td>
+                                <td class="text-success fw-bold">Rs. {{ placement.salary?.toLocaleString() || 'N/A' }}</td>
+                                <td>{{ formatDate(placement.placed_at) }}</td>
+                                <td>
+                                    <button @click="router.push({name: 'company-placement-details', params: {id: placement.id}})" class="btn btn-primary btn-sm">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p v-else class="text-muted text-center py-4">No placements secured yet.</p>
             </div>
         </div>
 
-<!-- Close Job Confirmation -->
+        <!-- Close Job Confirmation Modal -->
         <div v-if="jobToClose" class="modal d-block">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Confirm Close Job</h5>
                     </div>
                     <div class="modal-body">
-                        <p>Warning: Closing this job will automatically reject all pending applications (except those with accepted offers).</p>
-                        <p>Are you sure you want to close {{ jobToClose.title }}?</p>
+                        <p class="text-light">Warning: Closing this job will automatically reject all pending applications (except those with accepted offers).</p>
+                        <p>Are you sure you want to close <strong>{{ jobToClose.title }}</strong>?</p>
                     </div>
                     <div class="modal-footer">
                         <button @click="jobToClose = null" class="btn btn-secondary">Cancel</button>

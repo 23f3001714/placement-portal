@@ -147,6 +147,7 @@ class DownloadOfferLetter(Resource):
         try:
             application = Application.query.get(app_id)
             if not application:
+                #constantly maintain this error everywhere 
                 return {'error': 'Application not found'}, 404
             if not application.offer_letter_path:
                 return {'error': 'No offer letter available'}, 404

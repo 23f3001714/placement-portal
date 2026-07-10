@@ -40,16 +40,53 @@
 </script>
 
 <template>
-    <div class="text-center">
-        <h1>Login Page</h1>
-        <form class="form-group" @submit.prevent="login">
-            <label for="email">Email:</label>
-            <input type="email" v-model="email" placeholder="Email" id="email" class="form-control my-2" required/>
-            <label for="password">Password:</label>
-            <input type="password" v-model="password" placeholder="Password" id="password" class="form-control my-2" required/>
-            <button type="submit" class="btn btn-primary">Login</button>
-            <button class="btn btn-secondary" @click="router.push({name: 'home'})">Back</button>
-        </form>
-        <p v-if="error" class="text-danger mt-2">{{ error }}</p>
+  <div class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="glass-card w-100" style="max-width: 400px; border: 1px solid #333;">
+      <div class="text-center mb-4">
+        <h2 class="h3 mb-2 text-primary">Placement Portal Login</h2>
+        <p class="text-muted small">Enter your credentials to enter the application</p>
+      </div>
+
+      <form @submit.prevent="login">
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            v-model="email"
+            placeholder="Enter Email"
+            id="email"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            v-model="password"
+            placeholder="Enter Password"
+            id="password"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary">Login</button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            @click="router.push({name: 'home'})"
+          >
+            Go Back
+          </button>
+        </div>
+      </form>
+
+      <div v-if="error" class="alert alert-danger mt-3 text-center py-2">
+        {{ error }}
+      </div>
     </div>
+  </div>
 </template>

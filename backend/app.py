@@ -14,7 +14,8 @@ from celery.schedules import crontab
 from mail import mail
 from cache import redis
 
-load_dotenv()
+base_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(base_dir, '.env'))
 
 app_secret = os.getenv('SECRET_KEY')
 db_uri = os.getenv('DATABASE_URI')
@@ -23,6 +24,11 @@ frontend_origin = os.getenv('FRONTEND_URL')
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placement.db"
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "connect_args": {
+        "timeout": 30
+    }
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = jwt_key
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)
@@ -67,6 +73,10 @@ app.config['CELERY'] = {
             'task': 'task2_monthly_placement_report',
             'schedule': crontab(hour=7, minute=0, day_of_month=1),
         },
+        'daily-deadline-reminder': {
+            'task': 'task4_deadline_reminder',
+            'schedule': crontab(hour=9, minute=0),
+        },
     },
 }
 
@@ -82,6 +92,7 @@ def make_celery(flask_app: Flask) -> Celery:
     flask_app.extensions['celery'] = celery_instance
     return celery_instance
 
+# change needed?
 celery = make_celery(app)
 
 redis_cache_url = os.getenv('REDIS_CACHE_URL')
@@ -99,6 +110,7 @@ app.register_blueprint(company_bp)
 app.register_blueprint(student_bp)
 
 def initialize_superuser():
+    # look at this after this
     existing_admin = User.query.filter_by(role=UserRole.ADMIN).first()
     if not existing_admin:
         superuser = User(name='pcell', email='pcell@gmail.com', role=UserRole.ADMIN)

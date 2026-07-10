@@ -5,138 +5,111 @@ const router = useRouter()
 </script>
 
 <template>
-  <div class="home-page">
-    <div class="overlay">
-      <div class="hero-card">
+  <div class="home-page d-flex align-items-center justify-content-center min-vh-100 p-4">
+    <div class="glass-card text-center w-100" style="max-width: 800px; border: 1px solid #333;">
+      <h1 class="display-5 fw-bold mb-3 text-white">
+        Placement Portal Application
+      </h1>
 
-        <h1 class="display-3 fw-bold mb-3">
-          Campus Placement Portal
-        </h1>
+      <p class="lead text-light mb-4" style="max-width: 600px; margin: 0 auto 30px auto;">
+        An efficient system to manage campus recruitment activities involving companies, students and the placement cell.
+      </p>
 
-        <p class="lead text-light mb-5">
-          Welcome to the official placement portal, please register/login.
-        </p>
+      <div class="button-group mb-4">
+        <button
+          class="btn btn-primary action-btn"
+          @click="router.push('/login')"
+        >
+          Login
+        </button>
 
-        <div class="button-group">
-          <button
-            class="btn btn-primary btn-lg action-btn"
-            @click="router.push('/login')"
-          >
-            Login
-          </button>
+        <button
+          class="btn btn-success action-btn"
+          @click="router.push('/register/student')"
+        >
+          Register Student
+        </button>
 
-          <button
-            class="btn btn-success btn-lg action-btn"
-            @click="router.push('/register/student')"
-          >
-            Register as Student
-          </button>
-
-          <button
-            class="btn btn-warning btn-lg action-btn"
-            @click="router.push('/register/company')"
-          >
-            Register as Company
-          </button>
-        </div>
-
-        <div class="image-container mt-5">
-          <img
-            src="/tempo_placement.jpeg"
-            class="hero-image"
-            alt="Campus Placement Portal"
-          />
-        </div>
-
-        <hr class="my-4 text-light"/>
-
-        <p class="text-light small">
-          Need help?
-          <a href="mailto:admin@mail.com" class="mail-link">
-            admin@mail.com
-          </a>
-        </p>
-
+        <button
+          class="btn btn-warning action-btn text-white"
+          @click="router.push('/register/company')"
+        >
+          Register Company
+        </button>
       </div>
+
+      <div class="image-container mt-4 mb-4">
+        <img
+          src="/tempo_placement.jpeg"
+          class="hero-image"
+          alt="Placement Drive"
+        />
+      </div>
+
+      <hr class="my-4 rgba-white-divider"/>
+
+      <p class="text-muted small">
+        Support Contact: 
+        <a href="mailto:pcell@gmail.com" class="mail-link">
+          pcell@gmail.com
+        </a>
+      </p>
     </div>
   </div>
 </template>
 
 <style scoped>
-
-.home-page{
-    min-height:100vh;
-    background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:40px;
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.overlay{
-    width:100%;
-    display:flex;
-    justify-content:center;
+.button-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.hero-card{
-    max-width:1200px;
-    width:100%;
-    background:rgba(255,255,255,0.12);
-    backdrop-filter:blur(12px);
-    border-radius:24px;
-    padding:50px;
-    text-align:center;
-    color:white;
-    box-shadow:0 20px 40px rgba(0,0,0,0.35);
+.action-btn {
+  min-width: 220px;
+  padding: 14px 28px;
 }
 
-.button-group{
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap:20px;
+.image-container {
+  display: flex;
+  justify-content: center;
 }
 
-.action-btn{
-    min-width:220px;
-    padding:14px 28px;
-    border-radius:40px;
-    font-size:18px;
-    font-weight:600;
-    transition:all .3s ease;
+.hero-image {
+  width: 100%;
+  max-width: 750px;
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform .4s ease;
 }
 
-.action-btn:hover{
-    transform:translateY(-5px);
-    box-shadow:0 10px 20px rgba(0,0,0,.3);
+.hero-image:hover {
+  transform: scale(1.015);
 }
 
-.image-container{
-    display:flex;
-    justify-content:center;
+.rgba-white-divider {
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
 }
 
-.hero-image{
-    width:100%;
-    max-width:900px;
-    border-radius:20px;
-    box-shadow:0 20px 40px rgba(0,0,0,.35);
-    transition:transform .4s ease;
+.mail-link {
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s ease;
 }
 
-.hero-image:hover{
-    transform:scale(1.02);
+.mail-link:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
 }
-
-.mail-link{
-    color:#ffd43b;
-    text-decoration:none;
-    font-weight:bold;
-}
-
-.mail-link:hover{
-    text-decoration:underline;
-}
-
 </style>
