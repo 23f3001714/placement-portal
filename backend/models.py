@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import enum
+import enum #for roles
+#for storing in hash instead of plain password directly
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
@@ -11,9 +12,10 @@ class UserRole(enum.Enum):
     COMPANY = 'company'
 
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30), unique=False, nullable=False)
-    email = db.Column(db.String(30), unique=True, nullable=False)
+    name = db.Column(db.String(50), unique=False, nullable=False)
+    email = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.Enum(UserRole), nullable=False, default=UserRole.STUDENT)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -21,21 +23,24 @@ class User(db.Model):
     student = db.relationship('Student', back_populates='user', uselist=False)
     company = db.relationship('Company', back_populates='user', uselist=False)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    def set_password(self, raw_pwd):
+        # hash password
+        self.password_hash = generate_password_hash(raw_pwd)
     
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    def check_password(self, raw_pwd):
+        # check password
+        return check_password_hash(self.password_hash, raw_pwd)
 
 
 class Student(db.Model):
+    __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
     cgpa = db.Column(db.Float, nullable=False)
-    branch = db.Column(db.String(20), nullable=False)
+    branch = db.Column(db.String(50), nullable=False)
     graduation_year = db.Column(db.Integer, nullable=False)
     skills = db.Column(db.String(300))
-    resume_path = db.Column(db.String(100))
+    resume_path = db.Column(db.String(200))
     is_blacklisted = db.Column(db.Boolean, nullable=False, default=False)
 
     user = db.relationship('User', back_populates='student')
@@ -49,14 +54,15 @@ class ApprovalStatus(enum.Enum):
     REJECTED = 'rejected'
 
 class Company(db.Model):
+    __tablename__ = 'companies'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
     is_approved = db.Column(db.Enum(ApprovalStatus), nullable=False, default=ApprovalStatus.PENDING)
-    hr_email = db.Column(db.String(30), unique=False, nullable=False)
+    hr_email = db.Column(db.String(50), unique=False, nullable=False)
     description = db.Column(db.Text, nullable=False)
-    industry = db.Column(db.String(50), nullable=False)
+    industry = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(50))
-    website_link = db.Column(db.String(30))
+    website_link = db.Column(db.String(100))
     is_blacklisted = db.Column(db.Boolean, nullable=False, default=False)
 
     user = db.relationship('User', back_populates='company')
@@ -71,17 +77,18 @@ class JobStatus(enum.Enum):
     REJECTED = 'rejected'
     
 class JobPosition(db.Model):
+    __tablename__ = 'job_positions'
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-    title = db.Column(db.String(100), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
     deadline = db.Column(db.DateTime, nullable=False)
     skills_required = db.Column(db.String(300), nullable=False)
     vacancies = db.Column(db.Integer, default=1, nullable=False)
     status = db.Column(db.Enum(JobStatus), nullable=False, default=JobStatus.PENDING)
     min_cgpa = db.Column(db.Float, nullable=False)
-    eligible_branches = db.Column(db.String(200), nullable=False)
-    eligible_graduation_years = db.Column(db.String(100), nullable=False)
+    eligible_branches = db.Column(db.String(300), nullable=False)
+    eligible_graduation_years = db.Column(db.String(150), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     company = db.relationship('Company', back_populates='job_positions')
@@ -99,9 +106,10 @@ class ApplicationStatus(enum.Enum):
     OFFER_REJECTED = 'offer_rejected'
 
 class Application(db.Model):
+    __tablename__ = 'applications'
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('job_position.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('job_positions.id'), nullable=False)
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.Enum(ApplicationStatus), nullable=False, default=ApplicationStatus.APPLIED)
     interview_date = db.Column(db.DateTime)
@@ -118,11 +126,12 @@ class Application(db.Model):
 
 
 class Placement(db.Model):
+    __tablename__ = 'placements'
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False, unique=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('job_position.id'), nullable=False)
-    job_title = db.Column(db.String(100), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False, unique=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('job_positions.id'), nullable=False)
+    job_title = db.Column(db.String(150), nullable=False)
     salary = db.Column(db.Integer, nullable=False)
     joining_date = db.Column(db.Date, nullable=False)
     placed_at = db.Column(db.DateTime, default=datetime.utcnow)

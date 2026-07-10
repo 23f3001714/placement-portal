@@ -16,41 +16,41 @@ from cache import redis
 
 load_dotenv()
 
-secret_key = os.getenv('SECRET_KEY')
-database_uri = os.getenv('DATABASE_URI')
-jwt_secret_key = os.getenv('JWT_SECRET_KEY')
-frontend_url = os.getenv('FRONTEND_URL')
+app_secret = os.getenv('SECRET_KEY')
+db_uri = os.getenv('DATABASE_URI')
+jwt_key = os.getenv('JWT_SECRET_KEY')
+frontend_origin = os.getenv('FRONTEND_URL')
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placement.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = jwt_secret_key
+app.config['JWT_SECRET_KEY'] = jwt_key
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)
-app.secret_key = secret_key
+app.secret_key = app_secret
 
-mail_server = os.getenv('MAIL_SERVER')
-mail_username = os.getenv('MAIL_USERNAME')
-mail_password = os.getenv('MAIL_PASSWORD')
+mail_host = os.getenv('MAIL_SERVER')
+mail_user = os.getenv('MAIL_USERNAME') or 'pcell@gmail.com'
+mail_pwd = os.getenv('MAIL_PASSWORD')
 
-app.config['MAIL_SERVER'] = mail_server
+app.config['MAIL_SERVER'] = mail_host
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = mail_username
-app.config['MAIL_PASSWORD'] = mail_password
-app.config['MAIL_DEFAULT_SENDER'] = mail_username
+app.config['MAIL_USERNAME'] = mail_user
+app.config['MAIL_PASSWORD'] = mail_pwd
+app.config['MAIL_DEFAULT_SENDER'] = mail_user
 
 db.init_app(app)
 jwt = JWTManager(app)
-CORS(app, origins=[frontend_url])
+CORS(app, origins=[frontend_origin])
 mail.init_app(app)
 
-broker_url = os.getenv('BROKER_URL')
-result_backend = os.getenv('RESULT_BACKEND')
+celery_broker = os.getenv('BROKER_URL')
+celery_backend = os.getenv('RESULT_BACKEND')
 
 app.config['CELERY'] = {
-    'broker_url': broker_url,
-    'result_backend': result_backend,
+    'broker_url': celery_broker,
+    'result_backend': celery_backend,
     'task_ignore_result': False,
     'timezone': 'Asia/Kolkata',
     'enable_utc': True,
@@ -70,19 +70,19 @@ app.config['CELERY'] = {
     },
 }
 
-def celery_init_app(app: Flask) -> Celery:
-    class FlaskTask(Task):
+def make_celery(flask_app: Flask) -> Celery:
+    class ContextTask(Task):
         def __call__(self, *args: object, **kwargs: object) -> object:
-            with app.app_context():
+            with flask_app.app_context():
                 return self.run(*args, **kwargs)
 
-    celery_app = Celery(app.name, task_cls=FlaskTask)
-    celery_app.config_from_object(app.config['CELERY'])
-    celery_app.set_default()
-    app.extensions['celery'] = celery_app
-    return celery_app
+    celery_instance = Celery(flask_app.name, task_cls=ContextTask)
+    celery_instance.config_from_object(flask_app.config['CELERY'])
+    celery_instance.set_default()
+    flask_app.extensions['celery'] = celery_instance
+    return celery_instance
 
-celery = celery_init_app(app)
+celery = make_celery(app)
 
 redis_cache_url = os.getenv('REDIS_CACHE_URL')
 
@@ -98,18 +98,25 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(company_bp)
 app.register_blueprint(student_bp)
 
-def create_admin():
-    if not User.query.filter_by(role=UserRole.ADMIN).first():
-        admin = User(name='Admin', email='admin@mail.com', role=UserRole.ADMIN)
-        admin.set_password('Admin123')
-        db.session.add(admin)
+def initialize_superuser():
+    existing_admin = User.query.filter_by(role=UserRole.ADMIN).first()
+    if not existing_admin:
+        superuser = User(name='pcell', email='pcell@gmail.com', role=UserRole.ADMIN)
+        superuser.set_password('pcell123')
+        db.session.add(superuser)
         db.session.commit()
+    else:
+        if existing_admin.email != 'pcell@gmail.com' or existing_admin.name != 'pcell':
+            existing_admin.name = 'pcell'
+            existing_admin.email = 'pcell@gmail.com'
+            existing_admin.set_password('pcell123')
+            db.session.commit()
 
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        create_admin()
+        initialize_superuser()
         
     print(app.url_map)    
     app.run(debug=True)
