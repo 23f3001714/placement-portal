@@ -270,20 +270,38 @@ def export_csv(user_id, role):
 
     elif role == UserRole.COMPANY.value:
         target_company = account.company
-        csv_formatter.writerow(['Application ID', 'Student Name', 'Job Title', 'Applied At', 'Status', 'Salary', 'Joining Date'])
+        csv_formatter.writerow([
+            'Application ID',
+            'Candidate Name',
+            'Candidate Email',
+            'Department / Branch',
+            'CGPA',
+            'Graduation Year',
+            'Skills / Expertise',
+            'Job Applied For',
+            'Applied Date',
+            'Application Status',
+            'Offered Salary Package',
+            'Target Joining Date'
+        ])
         for job in target_company.job_positions:
             for record in job.applications:
                 csv_formatter.writerow([
                     record.id,
                     record.student.user.name,
+                    record.student.user.email,
+                    record.student.branch,
+                    record.student.cgpa,
+                    record.student.graduation_year,
+                    record.student.skills or 'Not Provided',
                     job.title,
                     record.applied_at.strftime('%d %b %Y'),
-                    record.status.value,
-                    record.salary or '',
-                    record.joining_date.strftime('%d %b %Y') if record.joining_date else ''
+                    record.status.value.upper().replace('_', ' '),
+                    f"Rs. {record.salary:,.2f}" if record.salary else 'N/A',
+                    record.joining_date.strftime('%d %b %Y') if record.joining_date else 'N/A'
                 ])
         export_name = f'applicationCompany{target_company.id}.csv'
-        subject = 'Application History Export'
+        subject = 'Company Placement Portal - Student Applicants Export'
 
     else:
         raise PermissionError('Unauthorized access')

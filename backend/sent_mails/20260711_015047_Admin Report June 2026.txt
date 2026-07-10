@@ -1,0 +1,10 @@
+Subject: Admin Report: June 2026
+Recipients: potato05jk@gmail.com
+Date: 11 Jul 2026 01:50:47
+----------------------------------------
+Body:
+None
+----------------------------------------
+Attachments:
+  - adminReportJune 2026.pdf (1355 bytes)
+    Saved as: /home/jamuna/Downloads/placement-portal-application-v2-main/backend/sent_mails/20260711_015047_adminReportJune 2026.pdf

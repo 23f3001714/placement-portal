@@ -35,7 +35,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)
 app.secret_key = app_secret
 
 mail_host = os.getenv('MAIL_SERVER')
-mail_user = os.getenv('MAIL_USERNAME') or 'pcell@gmail.com'
+mail_user = os.getenv('MAIL_USERNAME') or 'potato05jk@gmail.com'
 mail_pwd = os.getenv('MAIL_PASSWORD')
 
 app.config['MAIL_SERVER'] = mail_host
@@ -113,14 +113,14 @@ def initialize_superuser():
     # look at this after this
     existing_admin = User.query.filter_by(role=UserRole.ADMIN).first()
     if not existing_admin:
-        superuser = User(name='pcell', email='pcell@gmail.com', role=UserRole.ADMIN)
+        superuser = User(name='pcell', email='potato05jk@gmail.com', role=UserRole.ADMIN)
         superuser.set_password('pcell123')
         db.session.add(superuser)
         db.session.commit()
     else:
-        if existing_admin.email != 'pcell@gmail.com' or existing_admin.name != 'pcell':
+        if existing_admin.email != 'potato05jk@gmail.com' or existing_admin.name != 'pcell':
             existing_admin.name = 'pcell'
-            existing_admin.email = 'pcell@gmail.com'
+            existing_admin.email = 'potato05jk@gmail.com'
             existing_admin.set_password('pcell123')
             db.session.commit()
 
