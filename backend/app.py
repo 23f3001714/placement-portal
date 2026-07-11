@@ -84,7 +84,10 @@ def make_celery(flask_app: Flask) -> Celery:
     class ContextTask(Task):
         def __call__(self, *args: object, **kwargs: object) -> object:
             with flask_app.app_context():
-                return self.run(*args, **kwargs)
+                try:
+                    return self.run(*args, **kwargs)
+                finally:
+                    db.session.remove()
 
     celery_instance = Celery(flask_app.name, task_cls=ContextTask)
     celery_instance.config_from_object(flask_app.config['CELERY'])

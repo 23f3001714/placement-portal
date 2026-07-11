@@ -121,6 +121,7 @@ def update_application_status(company_id, data, app_id):
         application.offer_letter_path = filename
 
     db.session.commit()
+    cache_delete('stats:admin', f'stats:company:{company_id}')
 
     return {'message': f'Application status updated to {status}'}
 
@@ -146,6 +147,7 @@ def schedule_interview(company_id, app_id, data):
     application.status = ApplicationStatus.INTERVIEW_SCHEDULED
 
     db.session.commit()
+    cache_delete('stats:admin', f'stats:company:{company_id}')
 
     return {'message': 'Interview scheduled successfully'}
 
@@ -178,6 +180,7 @@ def create_application(job_id, student_id):
         application = Application(student_id=student_id, job_id=job_id, applied_at=datetime.now())
         db.session.add(application)
         db.session.commit()
+        cache_delete('stats:admin', f'stats:company:{job.company_id}')
         return {'message': 'Application successfully registered.'}
     except Exception as e:
         db.session.rollback()
@@ -242,7 +245,6 @@ def accept_reject_job_offer(app_id, student_id, status):
 
     db.session.commit()
 
-    if status == ApplicationStatus.OFFER_ACCEPTED:
-        cache_delete(f'placements:company:{company_id}', f'stats:company:{company_id}', 'stats:admin', 'jobs:student', 'jobs:admin')
+    cache_delete(f'placements:company:{company_id}', f'stats:company:{company_id}', 'stats:admin', 'jobs:student', 'jobs:admin')
 
     return {'message': f'{status.value} changed successfully.'}

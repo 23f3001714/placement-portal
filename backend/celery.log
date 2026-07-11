@@ -1,0 +1,27 @@
+ 
+ -------------- celery@jamuna-Inspiron-15-5518 v5.6.2 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.17.0-35-generic-x86_64-with-glibc2.39 2026-07-11 23:37:26
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         app:0x7a1cf71bc980
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . task1_interview_reminder
+  . task2_monthly_placement_report
+  . task3_export_csv
+  . task4_deadline_reminder
+
+[2026-07-11 23:37:27,017: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-07-11 23:37:27,018: INFO/MainProcess] mingle: searching for neighbors
+[2026-07-11 23:37:27,769: INFO/Beat] beat: Starting...
+[2026-07-11 23:37:28,024: INFO/MainProcess] mingle: all alone
+[2026-07-11 23:37:28,031: INFO/MainProcess] celery@jamuna-Inspiron-15-5518 ready.

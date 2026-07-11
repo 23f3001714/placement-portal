@@ -63,9 +63,9 @@ def update_approval_status(id, new_status):
     company.is_approved = new_status
     db.session.commit()
     if new_status == ApprovalStatus.APPROVED:
-        cache_delete('companies:admin', 'companies:student') 
+        cache_delete('companies:admin', 'companies:student', 'stats:admin') 
     else:
-        cache_delete('companies:admin')
+        cache_delete('companies:admin', 'stats:admin')
     return {'id': company.id, 'approval_status': new_status.value}
 
 def update_blacklist_status(id, is_blacklisted: bool):
@@ -78,7 +78,7 @@ def update_blacklist_status(id, is_blacklisted: bool):
     
     company.is_blacklisted = is_blacklisted
     db.session.commit()
-    cache_delete('companies:admin', 'companies:student')
+    cache_delete('companies:admin', 'companies:student', 'stats:admin')
     return {'id': company.id, 'is_blacklisted': is_blacklisted}
 
 def update_profile(id, data):

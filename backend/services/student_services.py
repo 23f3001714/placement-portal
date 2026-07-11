@@ -56,7 +56,7 @@ def toggle_blacklist_status(id, is_blacklisted: bool):
     
     student.is_blacklisted = is_blacklisted
     db.session.commit()
-    cache_delete('students:list')
+    cache_delete('students:list', 'stats:admin')
     return {'id': student.id, 'is_blacklisted': student.is_blacklisted}
 
 def update_details(id, data, resume_file=None):

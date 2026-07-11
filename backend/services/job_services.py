@@ -84,9 +84,9 @@ def approve_reject_job_drives(id, val, is_admin=False):
         job.status = val
         db.session.commit()
         if val == JobStatus.OPEN:
-            cache_delete('jobs:student', 'jobs:admin')
+            cache_delete('jobs:student', 'jobs:admin', 'stats:admin', f'stats:company:{job.company_id}')
         else:
-            cache_delete('jobs:admin')
+            cache_delete('jobs:admin', 'stats:admin', f'stats:company:{job.company_id}')
         return {'message': f'Job status updated to {val.value}'}
     elif not is_admin and job.status == JobStatus.OPEN and val == JobStatus.CLOSED:
         job.status = val
@@ -115,7 +115,7 @@ def create_a_job(company_id, data):
         )
         db.session.add(job)
         db.session.commit()
-        cache_delete('jobs:admin')
+        cache_delete('jobs:admin', 'stats:admin', f'stats:company:{company_id}')
         return 'Job created successfully. Pending admin approval.'
     
     except KeyError as e:
@@ -154,7 +154,7 @@ def toggle_job_status(company_id, job_id, status):
                 rejected += 1
         job.status = status
         db.session.commit()
-        cache_delete('jobs:student', 'jobs:admin')
+        cache_delete('jobs:student', 'jobs:admin', 'stats:admin', f'stats:company:{company_id}')
         return {'message': f'Job closed. {rejected} applications are auto rejected.'}
     else:
         raise ValueError('Can only close jobs, not reopen them')

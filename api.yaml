@@ -10,12 +10,14 @@ paths:
   /auth/register/student:
     post:
       summary: Register a new student
+      tags: [Auth]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [name, email, password, cgpa, branch, graduation_year]
               properties:
                 name: { type: string }
                 email: { type: string }
@@ -23,7 +25,6 @@ paths:
                 cgpa: { type: number }
                 branch: { type: string }
                 graduation_year: { type: integer }
-                skills: { type: string }
       responses:
         '201':
           description: Student registered successfully
@@ -35,12 +36,14 @@ paths:
   /auth/register/company:
     post:
       summary: Register a new company
+      tags: [Auth]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [name, email, password, hr_email, industry, description]
               properties:
                 name: { type: string }
                 email: { type: string }
@@ -48,8 +51,6 @@ paths:
                 hr_email: { type: string }
                 description: { type: string }
                 industry: { type: string }
-                location: { type: string }
-                website_link: { type: string }
       responses:
         '201':
           description: Company registered successfully
@@ -61,18 +62,27 @@ paths:
   /auth/login:
     post:
       summary: Authenticate user and return JWT token
+      tags: [Auth]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [email, password]
               properties:
                 email: { type: string }
                 password: { type: string }
       responses:
         '200':
-          description: Login successful, returns JWT access token
+          description: Login successful, returns JWT access token and role
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  role: { type: string, enum: [admin, student, company] }
         '400':
           description: Missing email or password
         '401':
@@ -80,9 +90,16 @@ paths:
         '403':
           description: Account is blacklisted or company not approved yet
 
+  # ─────────────────────────────────────────────
+  #  STUDENT ENDPOINTS
+  # ─────────────────────────────────────────────
+
   /student/profile:
     get:
       summary: Get current student profile details
+      tags: [Student]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Student profile retrieved successfully
@@ -90,6 +107,9 @@ paths:
           description: Student not found
     patch:
       summary: Update student profile details or upload resume
+      tags: [Student]
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -108,6 +128,9 @@ paths:
   /student/jobs:
     get:
       summary: Get all active job drives for students
+      tags: [Student]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: List of job drives retrieved
@@ -117,6 +140,9 @@ paths:
   /student/job/{job_id}:
     get:
       summary: Get details of a specific job drive
+      tags: [Student]
+      security:
+        - bearerAuth: []
       parameters:
         - name: job_id
           in: path
@@ -131,12 +157,16 @@ paths:
   /student/job/apply:
     post:
       summary: Apply for a job drive
+      tags: [Student]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [job_id]
               properties:
                 job_id: { type: integer }
       responses:
@@ -148,6 +178,9 @@ paths:
   /student/applications:
     get:
       summary: Get all job applications of the student
+      tags: [Student]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: List of applications
@@ -157,6 +190,9 @@ paths:
   /student/application/{app_id}:
     get:
       summary: Get status of a specific application
+      tags: [Student]
+      security:
+        - bearerAuth: []
       parameters:
         - name: app_id
           in: path
@@ -164,9 +200,12 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: Application details
+          description: Application details retrieved
     patch:
       summary: Accept or reject a job offer
+      tags: [Student]
+      security:
+        - bearerAuth: []
       parameters:
         - name: app_id
           in: path
@@ -178,24 +217,99 @@ paths:
           application/json:
             schema:
               type: object
+              required: [status]
               properties:
                 status: { type: string, enum: [offer_accepted, offer_rejected] }
       responses:
         '201':
           description: Offer status updated
 
+  /student/application/{app_id}/offer-letter:
+    get:
+      summary: Download offer letter PDF for an application
+      tags: [Student]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Offer letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Offer letter not found
+
+  /student/placement-letter:
+    get:
+      summary: Download own placement letter PDF
+      tags: [Student]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Placement letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Placement letter not found
+
+  /student/resume:
+    get:
+      summary: View or download own uploaded resume
+      tags: [Student]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Resume file returned
+        '404':
+          description: No resume uploaded
+
   /student/export/csv:
     post:
-      summary: Trigger CSV export of student application log
+      summary: Trigger CSV export of student application history
+      tags: [Student]
+      security:
+        - bearerAuth: []
       responses:
         '202':
-          description: Export task triggered (sent to background)
+          description: Export task triggered, CSV will be emailed to the student's registered email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  task_id: { type: string }
+
+  # ─────────────────────────────────────────────
+  #  COMPANY ENDPOINTS
+  # ─────────────────────────────────────────────
 
   /company/profile:
     get:
       summary: Get company profile details
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Company profile retrieved
     patch:
       summary: Update company profile details
+      tags: [Company]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -212,15 +326,29 @@ paths:
         '200':
           description: Profile updated
 
+  /company/stats:
+    get:
+      summary: Get company-specific dashboard statistics
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Company stats (total jobs, applications, placements) retrieved
+
   /company/job:
     post:
       summary: Create a new job posting
+      tags: [Company]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [title, deadline, vacancies]
               properties:
                 title: { type: string }
                 description: { type: string }
@@ -234,9 +362,60 @@ paths:
         '201':
           description: Job posting created and sent for admin approval
 
+  /company/job/{job_id}:
+    get:
+      summary: Get details of a specific company job drive
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Job details retrieved
+        '403':
+          description: Not authorized (job belongs to different company)
+    patch:
+      summary: Close a job drive
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_status: { type: string, enum: [closed] }
+      responses:
+        '200':
+          description: Job status updated to closed
+
+  /company/applications:
+    get:
+      summary: Get all applications across all company job drives
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Applications list retrieved
+
   /company/job/{job_id}/applications:
     get:
       summary: View applications for a specific job drive
+      tags: [Company]
+      security:
+        - bearerAuth: []
       parameters:
         - name: job_id
           in: path
@@ -247,8 +426,24 @@ paths:
           description: Applications list retrieved
 
   /company/application/{app_id}:
+    get:
+      summary: Get a specific application's full details
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Application details retrieved
     patch:
       summary: Shortlist, reject, or release offer to a student
+      tags: [Company]
+      security:
+        - bearerAuth: []
       parameters:
         - name: app_id
           in: path
@@ -260,17 +455,22 @@ paths:
           application/json:
             schema:
               type: object
+              required: [status]
               properties:
-                status: { type: string }
-                salary: { type: integer }
-                joining_date: { type: string, format: date }
+                status: { type: string, enum: [shortlisted, rejected, offer_released] }
+                feedback: { type: string }
+                salary: { type: integer, description: Required when status is offer_released }
+                joining_date: { type: string, format: date, description: Required when status is offer_released }
       responses:
         '200':
           description: Application status updated
 
   /company/application/{app_id}/interview:
     patch:
-      summary: Schedule an interview for an application
+      summary: Schedule an interview for a shortlisted application
+      tags: [Company]
+      security:
+        - bearerAuth: []
       parameters:
         - name: app_id
           in: path
@@ -282,23 +482,177 @@ paths:
           application/json:
             schema:
               type: object
+              required: [interview_date, interview_location]
               properties:
                 interview_date: { type: string, format: date-time }
                 interview_location: { type: string }
       responses:
         '200':
-          description: Interview scheduled
+          description: Interview scheduled, application status updated to interview_scheduled
+
+  /company/application/{app_id}/offer-letter:
+    get:
+      summary: Download offer letter PDF for an application
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Offer letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Offer letter not found
+
+  /company/placements:
+    get:
+      summary: Get all placements for the company
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of placements retrieved
+
+  /company/placement/{placement_id}:
+    get:
+      summary: Get a specific placement's details
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: placement_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Placement details retrieved
+
+  /company/placement/{student_id}/letter:
+    get:
+      summary: Download placement letter PDF for a student
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: student_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Placement letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Placement letter not found
+
+  /company/resume/{student_id}:
+    get:
+      summary: View or download a student's resume
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: student_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Resume file returned
+        '404':
+          description: No resume uploaded
+
+  /company/report:
+    post:
+      summary: Trigger company-specific monthly placement report via Celery
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Monthly report generation triggered, report will be emailed to company HR email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  task_id: { type: string }
+
+  /company/export/csv:
+    post:
+      summary: Trigger CSV export of applicant data for the company
+      tags: [Company]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Export task triggered, CSV will be emailed to the company's registered email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  task_id: { type: string }
+
+  # ─────────────────────────────────────────────
+  #  ADMIN ENDPOINTS
+  # ─────────────────────────────────────────────
+
+  /admin/stats:
+    get:
+      summary: Get admin dashboard statistics
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard stats (total students, companies, jobs, applications, placements)
 
   /admin/companies:
     get:
-      summary: Get all companies registered
+      summary: Get all companies registered (includes pending and rejected)
+      tags: [Admin]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: List of companies retrieved
 
   /admin/company/{id}:
+    get:
+      summary: Get a single company's details
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Company details retrieved
     patch:
       summary: Approve or reject a company registration
+      tags: [Admin]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -310,6 +664,7 @@ paths:
           application/json:
             schema:
               type: object
+              required: [approval_status]
               properties:
                 approval_status: { type: string, enum: [approved, rejected] }
       responses:
@@ -319,6 +674,9 @@ paths:
   /admin/company/{id}/blacklist-status:
     patch:
       summary: Blacklist or whitelist a company
+      tags: [Admin]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -330,15 +688,42 @@ paths:
           application/json:
             schema:
               type: object
+              required: [is_blacklisted]
               properties:
                 is_blacklisted: { type: boolean }
       responses:
         '200':
           description: Blacklist status updated
 
+  /admin/jobs:
+    get:
+      summary: Get all job drives (all statuses)
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all job drives retrieved
+
   /admin/job/{id}:
+    get:
+      summary: Get a single job drive with its applications
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Job drive details retrieved
     patch:
-      summary: Approve or reject a job drive listing
+      summary: Approve or reject a pending job drive listing
+      tags: [Admin]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -350,8 +735,250 @@ paths:
           application/json:
             schema:
               type: object
+              required: [status]
               properties:
                 status: { type: string, enum: [open, rejected] }
       responses:
         '200':
           description: Job status updated
+
+  /admin/job/{id}/stats:
+    get:
+      summary: Get statistics for a specific job drive
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Job stats (total applications, accepted, placements) retrieved
+
+  /admin/students:
+    get:
+      summary: Get all students list
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all students retrieved
+
+  /admin/student/{id}:
+    get:
+      summary: Get a single student's details
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Student details retrieved
+    patch:
+      summary: Toggle student blacklist status
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_blacklisted]
+              properties:
+                is_blacklisted: { type: boolean }
+      responses:
+        '200':
+          description: Student blacklist status updated
+
+  /admin/applications:
+    get:
+      summary: Get all applications across all companies and students
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all applications retrieved
+
+  /admin/application/{id}:
+    get:
+      summary: Get a single application's full details
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Application details retrieved
+
+  /admin/student/{student_id}/applications:
+    get:
+      summary: Get all applications for a specific student
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: student_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Student's applications list retrieved
+
+  /admin/application/{app_id}/offer-letter:
+    get:
+      summary: Download offer letter PDF for an application
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Offer letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Offer letter not found
+
+  /admin/placement/{placement_id}/letter:
+    get:
+      summary: Download placement letter PDF
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: placement_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Placement letter PDF file returned
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Placement letter not found
+
+  /admin/placements:
+    get:
+      summary: Get all placements
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all placements retrieved
+
+  /admin/student/{student_id}/resume:
+    get:
+      summary: Download a student's resume
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: student_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Resume file returned
+        '404':
+          description: No resume uploaded
+
+  /admin/trigger/interview-reminder:
+    post:
+      summary: Manually trigger the interview reminder Celery task
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Interview reminder task triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  task_id: { type: string }
+
+  /admin/trigger/monthly-report:
+    post:
+      summary: Manually trigger the monthly placement report Celery task
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Monthly report generation triggered, admin-only HTML report will be emailed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  task_id: { type: string }
+
+  /admin/task/{task_id}:
+    get:
+      summary: Check status of an async Celery task
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state: { type: string, enum: [SUCCESS, FAILURE, PENDING] }
+                  result: { type: object }
+        '202':
+          description: Task is still running
+        '500':
+          description: Task failed
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login

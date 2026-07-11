@@ -21,7 +21,7 @@ def register_student(data):
         student = Student(user_id=user.id, cgpa=cgpa, branch=branch, graduation_year=graduation_year)
         db.session.add(student)
         db.session.commit()
-        cache_delete('students:list')
+        cache_delete('students:list', 'stats:admin')
         return 'Student registered successfully.'
 
     except Exception:
@@ -47,7 +47,7 @@ def register_company(data):
         company = Company(user_id=user.id, hr_email=hr_email, industry=industry, description=description)
         db.session.add(company)
         db.session.commit()
-        cache_delete('companies:admin')
+        cache_delete('companies:admin', 'stats:admin')
         return 'Company registered successfully.'
 
     except Exception:

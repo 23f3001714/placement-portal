@@ -2,7 +2,7 @@ from mail import mail, mail_username
 from models import Application, ApplicationStatus, Company, ApprovalStatus, User, UserRole
 from flask_mail import Message
 from celery import shared_task
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from services.pdf_services import generate_company_report, generate_admin_report
 import csv, io, os, urllib.request, json
 
@@ -146,13 +146,16 @@ def send_email_and_save_backup(msg):
 
 @shared_task(ignore_result=False, name='task1_interview_reminder')
 def interview_reminder():
+    from models import db
+    db.session.expire_all()
     scheduled_apps = Application.query.filter_by(status=ApplicationStatus.INTERVIEW_SCHEDULED).all()
     reminder_count = 0
 
     for record in scheduled_apps:
         if not record.interview_date:
             continue
-        time_difference = record.interview_date - datetime.now()
+        kolkata_now = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30))).replace(tzinfo=None)
+        time_difference = record.interview_date - kolkata_now
         if time_difference < timedelta(0) or time_difference > timedelta(days=1):
             continue
 
@@ -178,6 +181,8 @@ def interview_reminder():
 
 @shared_task(ignore_result=False, name='task2_monthly_placement_report')
 def monthly_placement_report(company_id=None, admin_only=False):
+    from models import db
+    db.session.expire_all()
     current_time = datetime.utcnow()
     target_month = 12 if current_time.month == 1 else current_time.month - 1
     target_year = current_time.year - 1 if current_time.month == 1 else current_time.year
@@ -244,6 +249,8 @@ def monthly_placement_report(company_id=None, admin_only=False):
 @shared_task(ignore_result=False, name='task3_export_csv')
 def export_csv(user_id, role):
     # later on check here
+    from models import db
+    db.session.expire_all()
     account = User.query.get(user_id)
     if not account:
         raise LookupError('User not found')
@@ -319,6 +326,8 @@ def export_csv(user_id, role):
 
 @shared_task(ignore_result=False, name='task4_deadline_reminder')
 def deadline_reminder():
+    from models import db
+    db.session.expire_all()
     from models import JobPosition, JobStatus, Student, Application, ApplicationStatus
     
     open_jobs = JobPosition.query.filter_by(status=JobStatus.OPEN).all()
@@ -328,7 +337,8 @@ def deadline_reminder():
     for job in open_jobs:
         if not job.deadline:
             continue
-        time_to_deadline = job.deadline - datetime.now()
+        kolkata_now = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30))).replace(tzinfo=None)
+        time_to_deadline = job.deadline - kolkata_now
         if timedelta(0) < time_to_deadline <= timedelta(days=1):
             students = Student.query.filter_by(is_blacklisted=False).all()
             for student in students:

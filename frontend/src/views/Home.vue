@@ -50,8 +50,8 @@ const router = useRouter()
 
       <p class="text-muted small">
         Support Contact: 
-        <a href="mailto:pcell@gmail.com" class="mail-link">
-          pcell@gmail.com
+        <a href="mailto:potato05jk@gmail.com" class="mail-link">
+          potato05jk@gmail.com
         </a>
       </p>
     </div>

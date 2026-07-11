@@ -1,0 +1,14 @@
+Subject: Application History Export
+Recipients: mithrajk2020@gmail.com
+Date: 11 Jul 2026 20:40:14
+----------------------------------------
+Body:
+Hi mithra,
+
+Your csv is ready. Please find it below.
+
+Placement Comittee
+----------------------------------------
+Attachments:
+  - applicationStudent1.csv (184 bytes)
+    Saved as: /home/jamuna/Downloads/placement-portal-application-v2-main/backend/sent_mails/20260711_204014_applicationStudent1.csv
