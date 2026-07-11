@@ -64,6 +64,7 @@ class Company(db.Model):
     location = db.Column(db.String(50))
     website_link = db.Column(db.String(100))
     is_blacklisted = db.Column(db.Boolean, nullable=False, default=False)
+    #atleast register some 5 companies diff domains, then check 
 
     user = db.relationship('User', back_populates='company')
     job_positions = db.relationship('JobPosition', back_populates='company')
@@ -104,6 +105,7 @@ class ApplicationStatus(enum.Enum):
     OFFER_RELEASED = 'offer_released'
     OFFER_ACCEPTED = 'offer_accepted'
     OFFER_REJECTED = 'offer_rejected'
+    #check once before checking the routes
 
 class Application(db.Model):
     __tablename__ = 'applications'

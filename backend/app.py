@@ -110,10 +110,11 @@ app.register_blueprint(company_bp)
 app.register_blueprint(student_bp)
 
 def initialize_superuser():
-    # look at this after this
+    # look at this after after admin you created
     existing_admin = User.query.filter_by(role=UserRole.ADMIN).first()
     if not existing_admin:
         superuser = User(name='pcell', email='potato05jk@gmail.com', role=UserRole.ADMIN)
+        #google password check once properly
         superuser.set_password('pcell123')
         db.session.add(superuser)
         db.session.commit()

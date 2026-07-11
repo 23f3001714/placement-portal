@@ -1,0 +1,357 @@
+openapi: 3.0.3
+info:
+  title: Campus Placement Portal API
+  description: API endpoints for the Campus Placement Portal, connecting Students, Companies, and the Placement Cell Admin.
+  version: 2.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+paths:
+  /auth/register/student:
+    post:
+      summary: Register a new student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                cgpa: { type: number }
+                branch: { type: string }
+                graduation_year: { type: integer }
+                skills: { type: string }
+      responses:
+        '201':
+          description: Student registered successfully
+        '400':
+          description: Missing field
+        '409':
+          description: Email already registered
+
+  /auth/register/company:
+    post:
+      summary: Register a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                hr_email: { type: string }
+                description: { type: string }
+                industry: { type: string }
+                location: { type: string }
+                website_link: { type: string }
+      responses:
+        '201':
+          description: Company registered successfully
+        '400':
+          description: Missing field
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful, returns JWT access token
+        '400':
+          description: Missing email or password
+        '401':
+          description: Invalid email or password
+        '403':
+          description: Account is blacklisted or company not approved yet
+
+  /student/profile:
+    get:
+      summary: Get current student profile details
+      responses:
+        '200':
+          description: Student profile retrieved successfully
+        '404':
+          description: Student not found
+    patch:
+      summary: Update student profile details or upload resume
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                skills: { type: string }
+                cgpa: { type: number }
+                resume: { type: string, format: binary }
+      responses:
+        '200':
+          description: Details updated successfully
+        '400':
+          description: No values updated
+
+  /student/jobs:
+    get:
+      summary: Get all active job drives for students
+      responses:
+        '200':
+          description: List of job drives retrieved
+        '204':
+          description: No job drives found
+
+  /student/job/{job_id}:
+    get:
+      summary: Get details of a specific job drive
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Job details retrieved
+        '403':
+          description: Unauthorized access
+
+  /student/job/apply:
+    post:
+      summary: Apply for a job drive
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_id: { type: integer }
+      responses:
+        '200':
+          description: Application submitted successfully
+        '403':
+          description: Student is blacklisted or not eligible
+
+  /student/applications:
+    get:
+      summary: Get all job applications of the student
+      responses:
+        '200':
+          description: List of applications
+        '204':
+          description: No applications found
+
+  /student/application/{app_id}:
+    get:
+      summary: Get status of a specific application
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Application details
+    patch:
+      summary: Accept or reject a job offer
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [offer_accepted, offer_rejected] }
+      responses:
+        '201':
+          description: Offer status updated
+
+  /student/export/csv:
+    post:
+      summary: Trigger CSV export of student application log
+      responses:
+        '202':
+          description: Export task triggered (sent to background)
+
+  /company/profile:
+    get:
+      summary: Get company profile details
+    patch:
+      summary: Update company profile details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hr_email: { type: string }
+                description: { type: string }
+                industry: { type: string }
+                location: { type: string }
+                website_link: { type: string }
+      responses:
+        '200':
+          description: Profile updated
+
+  /company/job:
+    post:
+      summary: Create a new job posting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                deadline: { type: string, format: date-time }
+                skills_required: { type: string }
+                vacancies: { type: integer }
+                min_cgpa: { type: number }
+                eligible_branches: { type: string }
+                eligible_graduation_years: { type: string }
+      responses:
+        '201':
+          description: Job posting created and sent for admin approval
+
+  /company/job/{job_id}/applications:
+    get:
+      summary: View applications for a specific job drive
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Applications list retrieved
+
+  /company/application/{app_id}:
+    patch:
+      summary: Shortlist, reject, or release offer to a student
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+                salary: { type: integer }
+                joining_date: { type: string, format: date }
+      responses:
+        '200':
+          description: Application status updated
+
+  /company/application/{app_id}/interview:
+    patch:
+      summary: Schedule an interview for an application
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                interview_date: { type: string, format: date-time }
+                interview_location: { type: string }
+      responses:
+        '200':
+          description: Interview scheduled
+
+  /admin/companies:
+    get:
+      summary: Get all companies registered
+      responses:
+        '200':
+          description: List of companies retrieved
+
+  /admin/company/{id}:
+    patch:
+      summary: Approve or reject a company registration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_status: { type: string, enum: [approved, rejected] }
+      responses:
+        '200':
+          description: Approval status updated
+
+  /admin/company/{id}/blacklist-status:
+    patch:
+      summary: Blacklist or whitelist a company
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_blacklisted: { type: boolean }
+      responses:
+        '200':
+          description: Blacklist status updated
+
+  /admin/job/{id}:
+    patch:
+      summary: Approve or reject a job drive listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [open, rejected] }
+      responses:
+        '200':
+          description: Job status updated
