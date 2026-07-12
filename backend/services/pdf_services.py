@@ -1,6 +1,6 @@
 import os
 from fpdf import FPDF
-from datetime import datetime, date
+from datetime import datetime, date, time
 import calendar
 from models import Application, Placement, Company, ApprovalStatus
 
@@ -113,8 +113,11 @@ def generate_company_report(company, month, year):
     month_name = date(year, month, 1).strftime('%B %Y')
     company_name = company.user.name
 
-    apps_month = [app for job in company.job_positions for app in job.applications if start <= app.applied_at.date() <= end]
-    placements_month = [p for p in company.placements if start <= p.placed_at.date() <= end]
+    start_dt = datetime.combine(start, time.min)
+    end_dt = datetime.combine(end, time.max)
+
+    apps_month = [app for job in company.job_positions for app in job.applications if start_dt <= app.applied_at <= end_dt]
+    placements_month = [p for p in company.placements if start_dt <= p.placed_at <= end_dt]
 
     status_counts = {}
     for app in apps_month:
@@ -169,8 +172,11 @@ def generate_admin_report(month, year):
     end = date(year, month, calendar.monthrange(year, month)[1])
     month_name = date(year, month, 1).strftime('%B %Y')
 
-    apps = Application.query.filter(Application.applied_at >= start, Application.applied_at <= end).all()
-    placements = Placement.query.filter(Placement.placed_at >= start, Placement.placed_at <= end).all()
+    start_dt = datetime.combine(start, time.min)
+    end_dt = datetime.combine(end, time.max)
+
+    apps = Application.query.filter(Application.applied_at >= start_dt, Application.applied_at <= end_dt).all()
+    placements = Placement.query.filter(Placement.placed_at >= start_dt, Placement.placed_at <= end_dt).all()
 
     avg = (sum(p.salary for p in placements) / len(placements)if placements else 0)
 

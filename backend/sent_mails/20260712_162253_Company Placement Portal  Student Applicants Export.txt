@@ -1,6 +1,6 @@
 Subject: Company Placement Portal - Student Applicants Export
-Recipients: mithra.nitt@gmail.com
-Date: 11 Jul 2026 20:39:16
+Recipients: mithrajk2020@gmail.com
+Date: 12 Jul 2026 16:22:53
 ----------------------------------------
 Body:
 Hi Microsoft,
@@ -10,5 +10,5 @@ Your csv is ready. Please find it below.
 Placement Comittee
 ----------------------------------------
 Attachments:
-  - applicationCompany1.csv (315 bytes)
-    Saved as: /home/jamuna/Downloads/placement-portal-application-v2-main/backend/sent_mails/20260711_203916_applicationCompany1.csv
+  - applicationCompany1.csv (332 bytes)
+    Saved as: /home/jamuna/Downloads/placement-portal-application-v2-main/backend/sent_mails/20260712_162253_applicationCompany1.csv

@@ -14,9 +14,13 @@ def build_admin_html_report(target_month, target_year, report_period):
     start = date(target_year, target_month, 1)
     end = date(target_year, target_month, calendar.monthrange(target_year, target_month)[1])
     
-    drives_count = JobPosition.query.filter(JobPosition.created_at >= start, JobPosition.created_at <= end).count()
-    apps = Application.query.filter(Application.applied_at >= start, Application.applied_at <= end).all()
-    placements = Placement.query.filter(Placement.placed_at >= start, Placement.placed_at <= end).all()
+    from datetime import datetime, time
+    start_dt = datetime.combine(start, time.min)
+    end_dt = datetime.combine(end, time.max)
+    
+    drives_count = JobPosition.query.filter(JobPosition.created_at >= start_dt, JobPosition.created_at <= end_dt).count()
+    apps = Application.query.filter(Application.applied_at >= start_dt, Application.applied_at <= end_dt).all()
+    placements = Placement.query.filter(Placement.placed_at >= start_dt, Placement.placed_at <= end_dt).all()
     
     avg_salary = (sum(p.salary for p in placements) / len(placements) if placements else 0)
     companies = Company.query.filter_by(is_approved=ApprovalStatus.APPROVED).all()
@@ -184,8 +188,15 @@ def monthly_placement_report(company_id=None, admin_only=False):
     from models import db
     db.session.expire_all()
     current_time = datetime.utcnow()
-    target_month = 12 if current_time.month == 1 else current_time.month - 1
-    target_year = current_time.year - 1 if current_time.month == 1 else current_time.year
+    
+    # If manually triggered (admin_only or company_id specified), default to the current month 
+    # to show live/new data immediately. If run automatically by the scheduler, use the previous month.
+    if admin_only or company_id:
+        target_month = current_time.month
+        target_year = current_time.year
+    else:
+        target_month = 12 if current_time.month == 1 else current_time.month - 1
+        target_year = current_time.year - 1 if current_time.month == 1 else current_time.year
 
     report_period = datetime(target_year, target_month, 1).strftime('%B %Y')
 
